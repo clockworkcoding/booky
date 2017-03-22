@@ -8,6 +8,8 @@ import (
 	"github.com/clockworkcoding/goodreads"
 )
 
+var config Configuration
+
 type Configuration struct {
 	GoodReadsKey    string `json:"goodReadsKey"`
 	GoodReadsSecret string `json:"goodReadsSecret"`
@@ -20,10 +22,13 @@ type Configuration struct {
 }
 
 func main() {
-	config := readConfig()
 
 	response := goodreads.GetSearch("Collapsing Empire", config.GoodReadsKey)
 	fmt.Println(response)
+}
+
+func init() {
+	config = readConfig()
 }
 
 func readConfig() Configuration {
