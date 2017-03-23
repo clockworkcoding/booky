@@ -22,9 +22,10 @@ type Configuration struct {
 }
 
 func main() {
-
-	response := goodreads.GetSearch("Collapsing Empire", config.GoodReadsKey)
-	fmt.Println(response)
+	gr := goodreads.NewClient(config.GoodReadsKey, config.GoodReadsSecret)
+	results, _ := gr.GetSearch("Collapsing Empire")
+	book, _ := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+	fmt.Println(book.Book_description.Text)
 }
 
 func init() {
@@ -41,5 +42,5 @@ func readConfig() Configuration {
 		fmt.Println("error:", err)
 	}
 
-	return configuration // output: [UserA, UserB]
+	return configuration
 }
