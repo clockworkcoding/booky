@@ -23,8 +23,17 @@ type Configuration struct {
 
 func main() {
 	gr := goodreads.NewClient(config.GoodReadsKey, config.GoodReadsSecret)
-	results, _ := gr.GetSearch("Collapsing Empire")
-	book, _ := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+	results, err := gr.GetSearch("Collapsing Empire")
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	book, err := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
 	fmt.Println(book.Book_description.Text)
 }
 
