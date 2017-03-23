@@ -34,6 +34,7 @@ func main() {
 		return
 	}
 
+	fmt.Println(book.Book_title[0].Text)
 	fmt.Println(book.Book_description.Text)
 }
 

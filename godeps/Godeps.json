@@ -1,0 +1,20 @@
+{
+	"ImportPath": "github.com/clockworkcoding/booky",
+	"GoVersion": "go1.8",
+	"GodepVersion": "v79",
+	"Deps": [
+		{
+			"ImportPath": "github.com/clockworkcoding/goodreads",
+			"Rev": "bd5e51e37f01fffa43ce0441a0715d35e0baedf0"
+		},
+		{
+			"ImportPath": "github.com/dghubble/oauth1",
+			"Comment": "v0.4.0-14-g3c7784d",
+			"Rev": "3c7784d12fed88888d612324ea6897f7dc30723e"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "3e967e1d28d2c9c06e749dc2bdc14b04df89e689"
+		}
+	]
+}
