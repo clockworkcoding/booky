@@ -47,9 +47,20 @@ func readConfig() Configuration {
 	file, _ := os.Open("conf.json")
 	decoder := json.NewDecoder(file)
 	configuration := Configuration{}
-	err := decoder.Decode(&configuration)
-	if err != nil {
-		fmt.Println("error:", err)
+
+	if configuration.GoodReadsKey = os.Getenv("goodReadsKey"); configuration.GoodReadsKey != "" {
+		configuration.GoodReadsHost = os.Getenv("goodReadsHost")
+		configuration.GoodReadsPort = os.Getenv("goodReadsPort")
+		configuration.GoodReadsSecret = os.Getenv("goodReadsSecret")
+		configuration.IsHTTPS = os.Getenv("isHTTPS")
+		configuration.SlackHostHTTP = os.Getenv("slackHostHTTP")
+		configuration.SlackHost = os.Getenv("slackHost")
+		configuration.SlackToken = os.Getenv("slackToken")
+	} else {
+		err := decoder.Decode(&configuration)
+		if err != nil {
+			fmt.Println("error:", err)
+		}
 	}
 
 	return configuration
