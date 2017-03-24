@@ -2,11 +2,13 @@ package main
 
 import (
 	"crypto/rand"
+	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/clockworkcoding/goodreads"
 	"github.com/demisto/slack"
+	_ "github.com/lib/pq"
 	"golang.org/x/oauth2"
 	"log"
 	"net/http"
@@ -15,6 +17,7 @@ import (
 )
 
 var (
+	db     *sql.DB
 	config Configuration
 )
 
@@ -111,12 +114,7 @@ type Configuration struct {
 		ClientSecret string `json:"ClientSecret"`
 	} `json:"slack"`
 	Db struct {
-		Host     string `json:"Host"`
-		Database string `json:"Database"`
-		User     string `json:"User"`
-		Port     string `json:"Port"`
-		Password string `json:"Password"`
-		URI      string `json:"URI"`
+		URI string `json:"URI"`
 	} `json:"db"`
 }
 
@@ -133,14 +131,48 @@ func main() {
 		return
 	}
 
+	db, err = sql.Open("postgres", config.Db.URI)
+	if err != nil {
+		log.Fatalf("Error opening database: %q", err)
+	}
+
 	fmt.Println(book.Book_title[0].Text)
 	fmt.Println(book.Book_description.Text)
 
+	http.HandleFunc("/dbfunc", dbFunc)
 	http.HandleFunc("/add", addToSlack)
 	http.HandleFunc("/auth", auth)
 	http.HandleFunc("/", home)
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 
+}
+
+func dbFunc(w http.ResponseWriter, r *http.Request) {
+	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)"); err != nil {
+		writeError(w, 500, "Error creating database table: "+err.Error())
+		return
+	}
+
+	if _, err := db.Exec("INSERT INTO ticks VALUES (now())"); err != nil {
+		writeError(w, 500, "Error incrementing tick: "+err.Error())
+		return
+	}
+
+	rows, err := db.Query("SELECT tick FROM ticks")
+	if err != nil {
+		writeError(w, 500, "Error reading ticks: "+err.Error())
+		return
+	}
+
+	defer rows.Close()
+	for rows.Next() {
+		var tick time.Time
+		if err := rows.Scan(&tick); err != nil {
+			writeError(w, 500, "Error scanning ticks:"+err.Error())
+			return
+		}
+		w.Write([]byte(fmt.Sprintf("Read from DB: %s\n", tick.String())))
+	}
 }
 
 func init() {
@@ -154,6 +186,7 @@ func readConfig() Configuration {
 		configuration.Slack.ClientSecret = os.Getenv("slackClientSecret")
 		configuration.Goodreads.Secret = os.Getenv("goodReadsSecret")
 		configuration.Goodreads.Key = os.Getenv("goodReadsKey")
+		configuration.Db.URI = os.Getenv("DATABASE_URL")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

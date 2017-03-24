@@ -8,11 +8,6 @@
     "ClientSecret" : "{your key here}"
   },
   "db" : {
-    "Host" : "{your key here}",
-    "Database" : "{your key here}",
-    "User" : "{your key here}",
-    "Port" : "{your key here}",
-    "Password" : "{your key here}",
     "URI" : "{your key here}"
   }
 }
