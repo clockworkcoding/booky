@@ -1,10 +1,18 @@
 {
-  "goodReadsKey" : "{YOUR KEY HERE}",
-  "goodReadsSecret" :"{YOUR KEY HERE}",
-  "slackToken" : "{YOUR KEY HERE}",
-  "goodReadsHost" : "www.goodreads.com",
-  "goodReadsPort" : "443",
-  "slackHost" : "hooks.slack.com",
-  "slackHostHttp" : "https://hooks.slack.com",
-  "isHTTPS" : "true"
+  "Goodreads" : {
+    "Key" :"{your key here}",
+    "Secret" :"{your key here}"
+  },
+  "slack" : {
+    "ClientID" : "{your key here}",
+    "ClientSecret" : "{your key here}"
+  },
+  "db" : {
+    "Host" : "{your key here}",
+    "Database" : "{your key here}",
+    "User" : "{your key here}",
+    "Port" : "{your key here}",
+    "Password" : "{your key here}",
+    "URI" : "{your key here}"
+  }
 }

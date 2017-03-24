@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"github.com/clockworkcoding/goodreads"
 	"github.com/demisto/slack"
@@ -16,10 +15,7 @@ import (
 )
 
 var (
-	config       Configuration
-	address      = flag.String("address", ":8080", "Which address should I listen on")
-	clientID     = flag.String("client_id", "", "The client ID from https://api.slack.com/applications")
-	clientSecret = flag.String("client_secret", "", "The client secret from https://api.slack.com/applications")
+	config Configuration
 )
 
 type state struct {
@@ -47,8 +43,8 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	}
 	globalState = state{auth: hex.EncodeToString(b), ts: time.Now()}
 	conf := &oauth2.Config{
-		ClientID:     *clientID,
-		ClientSecret: *clientSecret,
+		ClientID:     config.Slack.ClientID,
+		ClientSecret: config.Slack.ClientSecret,
 		Scopes:       []string{"client"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://slack.com/oauth/authorize",
@@ -81,7 +77,7 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 403, "State is too old")
 		return
 	}
-	token, err := slack.OAuthAccess(*clientID, *clientSecret, code, "")
+	token, err := slack.OAuthAccess(config.Slack.ClientID, config.Slack.ClientSecret, code, "")
 	if err != nil {
 		writeError(w, 401, err.Error())
 		return
@@ -106,18 +102,26 @@ func home(w http.ResponseWriter, r *http.Request) {
 }
 
 type Configuration struct {
-	GoodReadsKey    string `json:"goodReadsKey"`
-	GoodReadsSecret string `json:"goodReadsSecret"`
-	SlackToken      string `json:"slackToken"`
-	GoodReadsHost   string `json:"goodReadsHost"`
-	GoodReadsPort   string `json:"goodReadsPort"`
-	SlackHost       string `json:"slackHost"`
-	SlackHostHTTP   string `json:"slackHostHttp"`
-	IsHTTPS         string `json:"isHTTPS"`
+	Goodreads struct {
+		Key    string `json:"Key"`
+		Secret string `json:"Secret"`
+	} `json:"Goodreads"`
+	Slack struct {
+		ClientID     string `json:"ClientID"`
+		ClientSecret string `json:"ClientSecret"`
+	} `json:"slack"`
+	Db struct {
+		Host     string `json:"Host"`
+		Database string `json:"Database"`
+		User     string `json:"User"`
+		Port     string `json:"Port"`
+		Password string `json:"Password"`
+		URI      string `json:"URI"`
+	} `json:"db"`
 }
 
 func main() {
-	gr := goodreads.NewClient(config.GoodReadsKey, config.GoodReadsSecret)
+	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	results, err := gr.GetSearch("Collapsing Empire")
 	if err != nil {
 		fmt.Println(err.Error())
@@ -132,15 +136,10 @@ func main() {
 	fmt.Println(book.Book_title[0].Text)
 	fmt.Println(book.Book_description.Text)
 
-	flag.Parse()
-	if *clientID == "" || *clientSecret == "" {
-		fmt.Println("You must specify the client ID and client secret from https://api.slack.com/applications")
-		os.Exit(1)
-	}
 	http.HandleFunc("/add", addToSlack)
 	http.HandleFunc("/auth", auth)
 	http.HandleFunc("/", home)
-	log.Fatal(http.ListenAndServe(*address, nil))
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 
 }
 
@@ -149,25 +148,19 @@ func init() {
 }
 
 func readConfig() Configuration {
-
-	file, _ := os.Open("conf.json")
-	decoder := json.NewDecoder(file)
 	configuration := Configuration{}
 
-	if configuration.SlackToken = os.Getenv("slackToken"); configuration.SlackToken != "" {
-		configuration.GoodReadsHost = os.Getenv("goodReadsHost")
-		configuration.GoodReadsPort = os.Getenv("goodReadsPort")
-		configuration.GoodReadsSecret = os.Getenv("goodReadsSecret")
-		configuration.IsHTTPS = os.Getenv("isHTTPS")
-		configuration.SlackHostHTTP = os.Getenv("slackHostHTTP")
-		configuration.SlackHost = os.Getenv("slackHost")
-		configuration.SlackToken = os.Getenv("slackToken")
+	if configuration.Slack.ClientID = os.Getenv("slackClientID"); configuration.Slack.ClientID != "" {
+		configuration.Slack.ClientSecret = os.Getenv("slackClientSecret")
+		configuration.Goodreads.Secret = os.Getenv("goodReadsSecret")
+		configuration.Goodreads.Key = os.Getenv("goodReadsKey")
 	} else {
+		file, _ := os.Open("conf.json")
+		decoder := json.NewDecoder(file)
 		err := decoder.Decode(&configuration)
 		if err != nil {
 			fmt.Println("error:", err)
 		}
 	}
-
 	return configuration
 }
