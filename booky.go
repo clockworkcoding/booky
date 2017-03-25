@@ -7,8 +7,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/clockworkcoding/goodreads"
-	"github.com/demisto/slack"
 	_ "github.com/lib/pq"
+	"github.com/nlopes/slack"
 	"golang.org/x/oauth2"
 	"log"
 	"net/http"
@@ -48,7 +48,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"client"},
+		Scopes:       []string{"channels:history", "incoming-webhook"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://slack.com/oauth/authorize",
 			TokenURL: "https://slack.com/api/oauth.access", // not actually used here
@@ -80,28 +80,43 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 403, "State is too old")
 		return
 	}
-	token, err := slack.OAuthAccess(config.Slack.ClientID, config.Slack.ClientSecret, code, "")
+	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
 	if err != nil {
 		writeError(w, 401, err.Error())
 		return
 	}
-	s, err := slack.New(slack.SetToken(token.AccessToken))
-	if err != nil {
-		writeError(w, 500, err.Error())
-		return
-	}
-	// Get our own user id
-	test, err := s.AuthTest()
-	if err != nil {
-		writeError(w, 500, err.Error())
-		return
-	}
-	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", test.Team, test.User)))
+	fmt.Println(oAuthResponse.IncomingWebhook.Channel)
+
+	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", oAuthResponse.TeamName, oAuthResponse.UserID)))
+	saveSlackAuth(oAuthResponse)
+
 }
 
 // home displays the add-to-slack button
 func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(`<html><head><title>Slack OAuth Test</title></head><body><a href="/add">Add To Slack</a></body></html>`))
+}
+
+type Challenge struct {
+	Token     string `json:"token"`
+	Challenge string `json:"challenge"`
+	Type      string `json:"type"`
+}
+
+// event responds to events from slack
+func event(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("event reached")
+	decoder := json.NewDecoder(r.Body)
+
+	var challenge Challenge
+	err := decoder.Decode(&challenge)
+	if err != nil {
+		fmt.Println("ERR: " + err.Error())
+	}
+	defer r.Body.Close()
+	fmt.Println(challenge.Challenge)
+
+	w.Write([]byte(challenge.Challenge))
 }
 
 type Configuration struct {
@@ -110,8 +125,9 @@ type Configuration struct {
 		Secret string `json:"Secret"`
 	} `json:"Goodreads"`
 	Slack struct {
-		ClientID     string `json:"ClientID"`
-		ClientSecret string `json:"ClientSecret"`
+		ClientID          string `json:"ClientID"`
+		ClientSecret      string `json:"ClientSecret"`
+		VerificationToken string `json:"VerificationToken"`
 	} `json:"slack"`
 	Db struct {
 		URI string `json:"URI"`
@@ -120,12 +136,13 @@ type Configuration struct {
 
 func main() {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
+
 	results, err := gr.GetSearch("Collapsing Empire")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	book, err := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+	_, err = gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -136,43 +153,62 @@ func main() {
 		log.Fatalf("Error opening database: %q", err)
 	}
 
-	fmt.Println(book.Book_title[0].Text)
-	fmt.Println(book.Book_description.Text)
+	//fmt.Println(book.Book_title[0].Text)
+	//fmt.Println(book.Book_description.Text)
 
 	http.HandleFunc("/dbfunc", dbFunc)
 	http.HandleFunc("/add", addToSlack)
 	http.HandleFunc("/auth", auth)
+	http.HandleFunc("/event", event)
 	http.HandleFunc("/", home)
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 
 }
 
-func dbFunc(w http.ResponseWriter, r *http.Request) {
-	if _, err := db.Exec("CREATE TABLE IF NOT EXISTS ticks (tick timestamp)"); err != nil {
-		writeError(w, 500, "Error creating database table: "+err.Error())
+func saveSlackAuth(oAuth *slack.OAuthResponse) {
+
+	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS slack_auth (
+		team varchar(200),
+		teamid varchar(20),
+		token varchar(200),
+		url varchar(200),
+		configUrl varchar(200),
+		channel varchar(200),
+		channelid varchar(200),
+		createdtime	timestamp
+		)`); err != nil {
+		fmt.Println("Error creating database table: " + err.Error())
 		return
 	}
 
-	if _, err := db.Exec("INSERT INTO ticks VALUES (now())"); err != nil {
-		writeError(w, 500, "Error incrementing tick: "+err.Error())
+	if _, err := db.Exec(fmt.Sprintf("INSERT INTO slack_auth VALUES ('%s','%s','%s','%s','%s','%s','%s, now()')", oAuth.TeamName, oAuth.TeamID,
+		oAuth.AccessToken, oAuth.IncomingWebhook.URL, oAuth.IncomingWebhook.ConfigurationURL, oAuth.IncomingWebhook.Channel, oAuth.IncomingWebhook.ChannelID)); err != nil {
+		fmt.Println("Error incrementing tick: " + err.Error())
 		return
 	}
 
-	rows, err := db.Query("SELECT tick FROM ticks")
+	rows, err := db.Query("SELECT * FROM slack_auth")
 	if err != nil {
-		writeError(w, 500, "Error reading ticks: "+err.Error())
+		fmt.Println("Error reading ticks: " + err.Error())
 		return
 	}
-
 	defer rows.Close()
 	for rows.Next() {
-		var tick time.Time
-		if err := rows.Scan(&tick); err != nil {
-			writeError(w, 500, "Error scanning ticks:"+err.Error())
+		var a, b, c, d, e, f, g string
+		if err := rows.Scan(&a, &b, &c, &d, &e, &f, &g); err != nil {
+			fmt.Println("Error scanning ticks:" + err.Error())
 			return
 		}
-		w.Write([]byte(fmt.Sprintf("Read from DB: %s\n", tick.String())))
+		fmt.Printf("Read from DB: %s - %s - %s - %s - %s - %s - %s\n", a, b, c, d, e, f, g)
 	}
+}
+func dbFunc(w http.ResponseWriter, r *http.Request) {
+
+	if _, err := db.Exec("DROP TABLE IF EXISTS slack_auth"); err != nil {
+		fmt.Println("Error creating database table: " + err.Error())
+		return
+	}
+	w.Write([]byte(fmt.Sprintf("Table Dropped")))
 }
 
 func init() {
@@ -182,11 +218,12 @@ func init() {
 func readConfig() Configuration {
 	configuration := Configuration{}
 
-	if configuration.Slack.ClientID = os.Getenv("slackClientID"); configuration.Slack.ClientID != "" {
-		configuration.Slack.ClientSecret = os.Getenv("slackClientSecret")
-		configuration.Goodreads.Secret = os.Getenv("goodReadsSecret")
-		configuration.Goodreads.Key = os.Getenv("goodReadsKey")
+	if configuration.Slack.ClientID = os.Getenv("SLACK_CLIENT_ID"); configuration.Slack.ClientID != "" {
+		configuration.Slack.ClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
+		configuration.Goodreads.Secret = os.Getenv("GOODREADS_SECRET")
+		configuration.Goodreads.Key = os.Getenv("GOODREADS_KEY")
 		configuration.Db.URI = os.Getenv("DATABASE_URL")
+		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)
