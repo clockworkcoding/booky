@@ -6,15 +6,15 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+	"time"
+
 	"github.com/clockworkcoding/goodreads"
 	_ "github.com/lib/pq"
 	"github.com/nlopes/slack"
 	"golang.org/x/oauth2"
-	"log"
-	"net/http"
-	"os"
-	"strings"
-	"time"
 )
 
 var (
@@ -103,44 +103,36 @@ type Challenge struct {
 	Challenge string `json:"challenge"`
 	Type      string `json:"type"`
 }
+type EventMeta struct {
+	Token       string   `json:"token"`
+	TeamID      string   `json:"team_id"`
+	APIAppID    string   `json:"api_app_id"`
+	Type        string   `json:"type"`
+	AuthedUsers []string `json:"authed_users"`
+	EventID     string   `json:"event_id"`
+	EventTime   int      `json:"event_time"`
+}
 
 // event responds to events from slack
 func event(w http.ResponseWriter, r *http.Request) {
-	// Create return string
-	var request []string
-	// Add the request string
-	url := fmt.Sprintf("%v %v %v", r.Method, r.URL, r.Proto)
-	request = append(request, url)
-	// Add the host
-	request = append(request, fmt.Sprintf("Host: %v", r.Host))
-	// Loop through headers
-	for name, headers := range r.Header {
-		name = strings.ToLower(name)
-		for _, h := range headers {
-			request = append(request, fmt.Sprintf("%v: %v", name, h))
-		}
-	}
-
-	// If this is a POST, add post data
-	if r.Method == "POST" {
-		r.ParseForm()
-		request = append(request, "\n")
-		request = append(request, r.Form.Encode())
-	}
-	// Return the request as a string
-	fmt.Println(strings.Join(request, "\n"))
-	fmt.Println("event reached")
 	decoder := json.NewDecoder(r.Body)
+	defer r.Body.Close()
 
-	var challenge Challenge
-	err := decoder.Decode(&challenge)
+	var eventMeta EventMeta
+	err := decoder.Decode(&eventMeta)
 	if err != nil {
 		fmt.Println("ERR: " + err.Error())
-	}
-	defer r.Body.Close()
-	fmt.Println(challenge.Challenge)
+		var challenge Challenge
+		err = decoder.Decode(&challenge)
+		if err != nil {
+			fmt.Println("ERR: " + err.Error())
+		}
+		return
 
-	w.Write([]byte(challenge.Challenge))
+	}
+	fmt.Println(eventMeta.Type)
+
+	w.Write([]byte("200"))
 }
 
 type Configuration struct {
