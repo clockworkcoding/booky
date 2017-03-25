@@ -128,8 +128,8 @@ func event(w http.ResponseWriter, r *http.Request) {
 		request = append(request, r.Form.Encode())
 	}
 	// Return the request as a string
-	log.Println(strings.Join(request, "\n"))
-	log.Println("event reached")
+	fmt.Println(strings.Join(request, "\n"))
+	fmt.Println("event reached")
 	decoder := json.NewDecoder(r.Body)
 
 	var challenge Challenge
