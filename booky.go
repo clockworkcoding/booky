@@ -104,9 +104,12 @@ type Challenge struct {
 	Type      string `json:"type"`
 }
 type EventMeta struct {
-	Token       string   `json:"token"`
-	TeamID      string   `json:"team_id"`
-	APIAppID    string   `json:"api_app_id"`
+	Token    string `json:"token"`
+	TeamID   string `json:"team_id"`
+	APIAppID string `json:"api_app_id"`
+	Event    struct {
+		Type string `json:"type"`
+	} `json:"event"`
 	Type        string   `json:"type"`
 	AuthedUsers []string `json:"authed_users"`
 	EventID     string   `json:"event_id"`
@@ -130,7 +133,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-	fmt.Println(eventMeta.Type)
+	fmt.Println(eventMeta.Event.Type)
 
 	w.Write([]byte("200"))
 }
