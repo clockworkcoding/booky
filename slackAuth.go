@@ -47,7 +47,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"incoming-webhook", "links:read", "links:write", "chat:write:user", "chat:write:bot", "commands", "chat:write:user"},
+		Scopes:       []string{"channels:history", "incoming-webhook", "links:read", "links:write", "chat:write:user", "chat:write:bot", "commands", "chat:write:user"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://slack.com/oauth/authorize",
 			TokenURL: "https://slack.com/api/oauth.access", // not actually used here

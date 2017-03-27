@@ -7,6 +7,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/clockworkcoding/goodreads"
@@ -46,17 +48,103 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte("Looking up your book using " + queryText + "..."))
+
+	params, err := createBookPost(queryText)
+	if err != nil {
+		return
+	}
 	api := slack.New(token)
-	params := slack.NewPostMessageParameters()
 	params.Username = userName
-	params.Text = queryText
-	ch, ts, err := api.PostMessage(channel, "Lets see if this works", params)
+	params.AsUser = false
+	ch, ts, err := api.PostMessage(channel, params.Text, params)
 	if err != nil {
 		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
 		return
 	}
 	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
 
+}
+
+func checkTextForBook(message EventMessage) {
+	tokenized := strings.Split(message.Event.Text, "_")
+	if len(tokenized) < 2 {
+		return
+	}
+	queryText := tokenized[1]
+	channel := message.Event.Channel
+	teamID := message.TeamID
+	token, authedChannel, err := getAuth(teamID)
+	if err != nil || channel != authedChannel {
+		return
+	}
+
+	params, err := createBookPost(queryText)
+	if err != nil {
+		return
+	}
+	api := slack.New(token)
+	params.AsUser = false
+	ch, ts, err := api.PostMessage(channel, params.Text, params)
+	if err != nil {
+		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
+		return
+	}
+	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
+
+}
+
+func createBookPost(queryText string) (params slack.PostMessageParameters, err error) {
+	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
+
+	results, err := gr.GetSearch(queryText)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	book, err := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	rating := book.Book_average_rating[0].Text
+	numRating, _ := strconv.ParseFloat(rating, 32)
+	var stars string
+	for i := 0; i < int(numRating+0.5); i++ {
+		stars += ":star:"
+	}
+
+	attachments := []slack.Attachment{
+		slack.Attachment{
+			AuthorName: book.Book_authors[0].Book_author.Book_name.Text,
+			ThumbURL:   book.Book_image_url[0].Text,
+			Fields: []slack.AttachmentField{
+				slack.AttachmentField{
+					Title: fmt.Sprintf("Avg Rating (%s)", rating),
+					Value: stars,
+					Short: true,
+				},
+				slack.AttachmentField{
+					Title: "Ratings",
+					Value: book.Book_ratings_count.Text,
+					Short: true,
+				},
+			},
+		},
+		slack.Attachment{
+			Text:       replaceMarkup(book.Book_description.Text),
+			MarkdownIn: []string{"text", "fields"},
+		},
+		slack.Attachment{
+			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
+		},
+	}
+
+	params = slack.NewPostMessageParameters()
+	params.Text = queryText
+	params.AsUser = false
+	params.Attachments = attachments
+	return
 }
 
 // event responds to events from slack
@@ -91,6 +179,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
 		fmt.Println(message.Event.Text)
+		checkTextForBook(message)
 	case "link_shared":
 		fmt.Println("It's a link!")
 		var link EventLinkShared
@@ -118,19 +207,7 @@ type Configuration struct {
 }
 
 func main() {
-	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
-
-	results, err := gr.GetSearch("Collapsing Empire")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	_, err = gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
+	var err error
 	db, err = sql.Open("postgres", config.Db.URI)
 	if err != nil {
 		log.Fatalf("Error opening database: %q", err)
