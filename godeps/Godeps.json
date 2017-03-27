@@ -23,6 +23,11 @@
 			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
 		},
 		{
+			"ImportPath": "github.com/mkungla/slack",
+			"Comment": "v0.0.1-177-g7b625af",
+			"Rev": "7b625af330d6dd43dd59837c9d0ff684ec7050cf"
+		},
+		{
 			"ImportPath": "github.com/nlopes/slack",
 			"Comment": "v0.0.1-176-g6519657",
 			"Rev": "6519657c021b7add19c4ef48220140cca0b1657b"
