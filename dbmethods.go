@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
 
 	_ "github.com/lib/pq"
 	"github.com/nlopes/slack"
@@ -31,28 +30,12 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 		return
 	}
 
-	rows, err := db.Query("SELECT 		team ,		teamid ,		token ,		url ,		configUrl ,		channel ,		channelid FROM slack_auth")
-	if err != nil {
-		fmt.Println("Error reading auth: " + err.Error())
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var a, b, c, d, e, f, g string
-		if err = rows.Scan(&a, &b, &c, &d, &e, &f, &g); err != nil {
-			fmt.Println("Error scanning auth:" + err.Error())
-			return
-		}
-		fmt.Printf("Read from DB: %s - %s - %s - %s - %s - %s - %s \n", a, b, c, d, e, f, g)
-	}
 	return
 }
 
 func getAuth(teamID string) (token, channelid string, err error) {
-	fmt.Printf("TeamId: %s\n", teamID)
 	rows, err := db.Query(fmt.Sprintf("SELECT token, channelid FROM slack_auth WHERE teamid = '%s' ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID))
 	if err != nil {
-		fmt.Println("Error reading auth: " + err.Error())
 		return
 	}
 	defer rows.Close()
@@ -64,13 +47,4 @@ func getAuth(teamID string) (token, channelid string, err error) {
 		return
 	}
 	return token, channelid, errors.New("Team not found")
-}
-
-func dbFunc(w http.ResponseWriter, r *http.Request) {
-
-	if _, err := db.Exec("DROP TABLE IF EXISTS slack_auth"); err != nil {
-		fmt.Println("Error creating database table: " + err.Error())
-		return
-	}
-	w.Write([]byte(fmt.Sprintf("Table Dropped")))
 }

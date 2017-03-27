@@ -84,13 +84,11 @@ func checkTextForBook(message EventMessage) {
 	}
 	api := slack.New(token)
 	params.AsUser = false
-	ch, ts, err := api.PostMessage(channel, params.Text, params)
+	_, _, err = api.PostMessage(channel, params.Text, params)
 	if err != nil {
-		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
+		fmt.Printf("Error posting: %s\n", err.Error())
 		return
 	}
-	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
-
 }
 
 func createBookPost(queryText string) (params slack.PostMessageParameters, err error) {
@@ -141,7 +139,7 @@ func createBookPost(queryText string) (params slack.PostMessageParameters, err e
 	}
 
 	params = slack.NewPostMessageParameters()
-	params.Text = queryText
+	params.Text = book.Book_title[0].Text
 	params.AsUser = false
 	params.Attachments = attachments
 	return
@@ -181,7 +179,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(message.Event.Text)
 		checkTextForBook(message)
 	case "link_shared":
-		fmt.Println("It's a link!")
 		var link EventLinkShared
 		err := json.Unmarshal(event, &link)
 		if err != nil {
@@ -213,15 +210,11 @@ func main() {
 		log.Fatalf("Error opening database: %q", err)
 	}
 
-	//fmt.Println(book.Book_title[0].Text)
-	//fmt.Println(book.Book_description.Text)
-
 	routing()
 	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
 func routing() {
-	http.HandleFunc("/dbfunc", dbFunc)
 	http.HandleFunc("/add", addToSlack)
 	http.HandleFunc("/auth", auth)
 	http.HandleFunc("/event", event)

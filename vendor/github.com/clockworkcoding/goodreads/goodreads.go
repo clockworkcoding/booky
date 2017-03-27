@@ -45,7 +45,7 @@ func (c *Client) GetSearch(query string) (Search_results, error) {
 	}
 
 	if err := xml.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Println(err)
+		fmt.Println(err)
 	}
 
 	return response.Search_search.Search_results, nil
@@ -79,7 +79,7 @@ func (c *Client) GetBook(id string) (Book_book, error) {
 	}
 
 	if err := xml.NewDecoder(resp.Body).Decode(&response); err != nil {
-		log.Println(err)
+		fmt.Println(err)
 	}
 
 	return response.Book_book[0], nil

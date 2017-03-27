@@ -25,7 +25,6 @@ func auth(w http.ResponseWriter, r *http.Request) {
 		writeError(w, 401, err.Error())
 		return
 	}
-	fmt.Println(oAuthResponse.IncomingWebhook.Channel)
 
 	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", oAuthResponse.TeamName, oAuthResponse.UserID)))
 	if err = saveSlackAuth(oAuthResponse); err != nil {
