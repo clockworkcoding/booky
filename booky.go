@@ -1,19 +1,19 @@
 package main
 
 import (
-	"crypto/rand"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"github.com/clockworkcoding/goodreads"
-	_ "github.com/lib/pq"
-	"github.com/nlopes/slack"
-	"golang.org/x/oauth2"
 	"log"
 	"net/http"
 	"os"
+	"strconv"
+	"strings"
 	"time"
+
+	"github.com/clockworkcoding/goodreads"
+	_ "github.com/lib/pq"
+	"github.com/nlopes/slack"
 )
 
 var (
@@ -34,89 +34,158 @@ func writeError(w http.ResponseWriter, status int, err string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(err))
+	fmt.Printf("Err: %s", err)
 }
 
-// addToSlack initializes the oauth process and redirects to Slack
-func addToSlack(w http.ResponseWriter, r *http.Request) {
-	// Just generate random state
-	b := make([]byte, 10)
-	_, err := rand.Read(b)
+func bookyCommand(w http.ResponseWriter, r *http.Request) {
+	queryText := r.FormValue("text")
+	channel := r.FormValue("channel_id")
+	teamID := r.FormValue("team_id")
+	userName := r.FormValue("user_name")
+	token, _, err := getAuth(teamID)
 	if err != nil {
-		writeError(w, 500, err.Error())
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
 	}
-	globalState = state{auth: hex.EncodeToString(b), ts: time.Now()}
-	conf := &oauth2.Config{
-		ClientID:     config.Slack.ClientID,
-		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"channels:history", "incoming-webhook"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://slack.com/oauth/authorize",
-			TokenURL: "https://slack.com/api/oauth.access", // not actually used here
+	w.Write([]byte("Looking up your book using " + queryText + "..."))
+
+	params, err := createBookPost(queryText)
+	if err != nil {
+		return
+	}
+	api := slack.New(token)
+	params.Username = userName
+	params.AsUser = false
+	ch, ts, err := api.PostMessage(channel, params.Text, params)
+	if err != nil {
+		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
+		return
+	}
+	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
+
+}
+
+func checkTextForBook(message EventMessage) {
+	tokenized := strings.Split(message.Event.Text, "_")
+	if len(tokenized) < 2 {
+		return
+	}
+	queryText := tokenized[1]
+	channel := message.Event.Channel
+	teamID := message.TeamID
+	token, authedChannel, err := getAuth(teamID)
+	if err != nil || channel != authedChannel {
+		return
+	}
+
+	params, err := createBookPost(queryText)
+	if err != nil {
+		return
+	}
+	api := slack.New(token)
+	params.AsUser = false
+	_, _, err = api.PostMessage(channel, params.Text, params)
+	if err != nil {
+		fmt.Printf("Error posting: %s\n", err.Error())
+		return
+	}
+}
+
+func createBookPost(queryText string) (params slack.PostMessageParameters, err error) {
+	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
+
+	results, err := gr.GetSearch(queryText)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+	book, err := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
+
+	rating := book.Book_average_rating[0].Text
+	numRating, _ := strconv.ParseFloat(rating, 32)
+	var stars string
+	for i := 0; i < int(numRating+0.5); i++ {
+		stars += ":star:"
+	}
+
+	attachments := []slack.Attachment{
+		slack.Attachment{
+			AuthorName: book.Book_authors[0].Book_author.Book_name.Text,
+			ThumbURL:   book.Book_image_url[0].Text,
+			Fields: []slack.AttachmentField{
+				slack.AttachmentField{
+					Title: fmt.Sprintf("Avg Rating (%s)", rating),
+					Value: stars,
+					Short: true,
+				},
+				slack.AttachmentField{
+					Title: "Ratings",
+					Value: book.Book_ratings_count.Text,
+					Short: true,
+				},
+			},
+		},
+		slack.Attachment{
+			Text:       replaceMarkup(book.Book_description.Text),
+			MarkdownIn: []string{"text", "fields"},
+		},
+		slack.Attachment{
+			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
 		},
 	}
-	url := conf.AuthCodeURL(globalState.auth)
-	http.Redirect(w, r, url, http.StatusFound)
-}
 
-// auth receives the callback from Slack, validates and displays the user information
-func auth(w http.ResponseWriter, r *http.Request) {
-	state := r.FormValue("state")
-	code := r.FormValue("code")
-	errStr := r.FormValue("error")
-	if errStr != "" {
-		writeError(w, 401, errStr)
-		return
-	}
-	if state == "" || code == "" {
-		writeError(w, 400, "Missing state or code")
-		return
-	}
-	if state != globalState.auth {
-		writeError(w, 403, "State does not match")
-		return
-	}
-	// As an example, we allow only 5 min between requests
-	if time.Since(globalState.ts) > 5*time.Minute {
-		writeError(w, 403, "State is too old")
-		return
-	}
-	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
-	if err != nil {
-		writeError(w, 401, err.Error())
-		return
-	}
-	fmt.Println(oAuthResponse.IncomingWebhook.Channel)
-
-	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", oAuthResponse.TeamName, oAuthResponse.UserID)))
-	saveSlackAuth(oAuthResponse)
-
-}
-
-// home displays the add-to-slack button
-func home(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(`<html><head><title>Slack OAuth Test</title></head><body><a href="/add">Add To Slack</a></body></html>`))
-}
-
-type Challenge struct {
-	Token     string `json:"token"`
-	Challenge string `json:"challenge"`
-	Type      string `json:"type"`
+	params = slack.NewPostMessageParameters()
+	params.Text = book.Book_title[0].Text
+	params.AsUser = false
+	params.Attachments = attachments
+	return
 }
 
 // event responds to events from slack
 func event(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("event reached")
 	decoder := json.NewDecoder(r.Body)
-
-	var challenge Challenge
-	err := decoder.Decode(&challenge)
-	if err != nil {
-		fmt.Println("ERR: " + err.Error())
-	}
 	defer r.Body.Close()
-	fmt.Println(challenge.Challenge)
-
-	w.Write([]byte(challenge.Challenge))
+	var v map[string]interface{}
+	err := decoder.Decode(&v)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if v["token"].(string) != config.Slack.VerificationToken {
+		writeError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
+	w.WriteHeader(http.StatusOK)
+	if v["type"] == "challenge" {
+		w.Write([]byte(v["challenge"].(string)))
+		return
+	}
+	event, err := json.Marshal(v)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+	}
+	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
+	switch v["event"].(map[string]interface{})["type"].(string) {
+	case "message":
+		var message EventMessage
+		err := json.Unmarshal(event, &message)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
+		fmt.Println(message.Event.Text)
+		checkTextForBook(message)
+	case "link_shared":
+		var link EventLinkShared
+		err := json.Unmarshal(event, &link)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
+		fmt.Println(link.Event.Links[0].URL)
+	}
 }
 
 type Configuration struct {
@@ -135,80 +204,23 @@ type Configuration struct {
 }
 
 func main() {
-	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
-
-	results, err := gr.GetSearch("Collapsing Empire")
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-	_, err = gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
-	if err != nil {
-		fmt.Println(err.Error())
-		return
-	}
-
+	var err error
 	db, err = sql.Open("postgres", config.Db.URI)
 	if err != nil {
 		log.Fatalf("Error opening database: %q", err)
 	}
 
-	//fmt.Println(book.Book_title[0].Text)
-	//fmt.Println(book.Book_description.Text)
+	routing()
+	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
+}
 
-	http.HandleFunc("/dbfunc", dbFunc)
+func routing() {
 	http.HandleFunc("/add", addToSlack)
 	http.HandleFunc("/auth", auth)
 	http.HandleFunc("/event", event)
+	http.HandleFunc("/booky", bookyCommand)
 	http.HandleFunc("/", home)
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 
-}
-
-func saveSlackAuth(oAuth *slack.OAuthResponse) {
-
-	if _, err := db.Exec(`CREATE TABLE IF NOT EXISTS slack_auth (
-		team varchar(200),
-		teamid varchar(20),
-		token varchar(200),
-		url varchar(200),
-		configUrl varchar(200),
-		channel varchar(200),
-		channelid varchar(200),
-		createdtime	timestamp
-		)`); err != nil {
-		fmt.Println("Error creating database table: " + err.Error())
-		return
-	}
-
-	if _, err := db.Exec(fmt.Sprintf("INSERT INTO slack_auth VALUES ('%s','%s','%s','%s','%s','%s','%s, now()')", oAuth.TeamName, oAuth.TeamID,
-		oAuth.AccessToken, oAuth.IncomingWebhook.URL, oAuth.IncomingWebhook.ConfigurationURL, oAuth.IncomingWebhook.Channel, oAuth.IncomingWebhook.ChannelID)); err != nil {
-		fmt.Println("Error incrementing tick: " + err.Error())
-		return
-	}
-
-	rows, err := db.Query("SELECT * FROM slack_auth")
-	if err != nil {
-		fmt.Println("Error reading ticks: " + err.Error())
-		return
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var a, b, c, d, e, f, g string
-		if err := rows.Scan(&a, &b, &c, &d, &e, &f, &g); err != nil {
-			fmt.Println("Error scanning ticks:" + err.Error())
-			return
-		}
-		fmt.Printf("Read from DB: %s - %s - %s - %s - %s - %s - %s\n", a, b, c, d, e, f, g)
-	}
-}
-func dbFunc(w http.ResponseWriter, r *http.Request) {
-
-	if _, err := db.Exec("DROP TABLE IF EXISTS slack_auth"); err != nil {
-		fmt.Println("Error creating database table: " + err.Error())
-		return
-	}
-	w.Write([]byte(fmt.Sprintf("Table Dropped")))
 }
 
 func init() {
