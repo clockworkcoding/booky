@@ -37,44 +37,46 @@ func writeError(w http.ResponseWriter, status int, err string) {
 func event(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	defer r.Body.Close()
-
-	var eventMeta EventMeta
-	err := decoder.Decode(&eventMeta)
+	var v map[string]interface{}
+	err := decoder.Decode(&v)
 	if err != nil {
 		fmt.Println("ERR: " + err.Error())
-		var challenge Challenge
-		err = decoder.Decode(&challenge)
-		if err != nil {
-			fmt.Println("ERR: " + err.Error())
-			writeError(w, http.StatusInternalServerError, err.Error())
-		}
+		writeError(w, http.StatusInternalServerError, err.Error())
 		return
-
 	}
-	fmt.Println(eventMeta.Event.Type)
-
+	if v["token"].(string) != config.Slack.VerificationToken {
+		writeError(w, http.StatusForbidden, "Forbidden")
+		return
+	}
 	w.WriteHeader(http.StatusOK)
+	if v["type"] == "challenge" {
+		w.Write([]byte(v["challenge"].(string)))
+		return
+	}
+	event, err := json.Marshal(v["event"].(map[string]interface{}))
+	if err != nil {
+		fmt.Println("ERR: " + err.Error())
+		writeError(w, http.StatusInternalServerError, err.Error())
+	}
 
-	decoder = json.NewDecoder(r.Body)
-	switch eventMeta.Event.Type {
+	switch v["event"].(map[string]interface{})["type"].(string) {
 	case "message":
 		var message EventMessage
-		err = decoder.Decode(&message)
+		err := json.Unmarshal(event, &message)
 		if err != nil {
 			fmt.Println("ERR: " + err.Error())
 			writeError(w, http.StatusInternalServerError, err.Error())
-			return
 		}
-		fmt.Println(message.Event.User, message.Event.Text)
+		fmt.Println(message.Text)
 	case "link_shared":
-		var linkShared EventLinkShared
-		err = decoder.Decode(&linkShared)
+		fmt.Println("It's a link!")
+		var link EventLinkShared
+		err := json.Unmarshal(event, &link)
 		if err != nil {
 			fmt.Println("ERR: " + err.Error())
 			writeError(w, http.StatusInternalServerError, err.Error())
-			return
 		}
-		fmt.Println(linkShared.Event.Links[0].URL)
+		fmt.Println(link.Links[0].URL)
 	}
 }
 
