@@ -160,7 +160,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	if v["type"] == "challenge" {
+	if v["type"].(string) == "url_verification" {
 		w.Write([]byte(v["challenge"].(string)))
 		return
 	}
