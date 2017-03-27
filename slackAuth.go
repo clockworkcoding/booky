@@ -2,10 +2,8 @@ package main
 
 import (
 	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"net/http"
-	"time"
 
 	"golang.org/x/oauth2"
 
@@ -16,24 +14,10 @@ import (
 
 // auth receives the callback from Slack, validates and displays the user information
 func auth(w http.ResponseWriter, r *http.Request) {
-	state := r.FormValue("state")
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
 		writeError(w, 401, errStr)
-		return
-	}
-	if state == "" || code == "" {
-		writeError(w, 400, "Missing state or code")
-		return
-	}
-	if state != globalState.auth {
-		writeError(w, 403, "State does not match")
-		return
-	}
-	// As an example, we allow only 5 min between requests
-	if time.Since(globalState.ts) > 5*time.Minute {
-		writeError(w, 403, "State is too old")
 		return
 	}
 	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
@@ -56,11 +40,11 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, 500, err.Error())
 	}
-	globalState = state{auth: hex.EncodeToString(b), ts: time.Now()}
+
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"channels:history", "incoming-webhook"},
+		Scopes:       []string{"incoming-webhook", "links:read", "links:write", "chat:write:user", "chat:write:bot", "commands", "chat:write:user"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://slack.com/oauth/authorize",
 			TokenURL: "https://slack.com/api/oauth.access", // not actually used here

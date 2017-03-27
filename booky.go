@@ -33,6 +33,12 @@ func writeError(w http.ResponseWriter, status int, err string) {
 	w.Write([]byte(err))
 }
 
+func bookyCommand(w http.ResponseWriter, r *http.Request) {
+	queryText := r.FormValue("text")
+	w.Write([]byte("Looking up your book using " + queryText + "..."))
+
+}
+
 // event responds to events from slack
 func event(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
@@ -53,12 +59,12 @@ func event(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(v["challenge"].(string)))
 		return
 	}
-	event, err := json.Marshal(v["event"].(map[string]interface{}))
+	event, err := json.Marshal(v)
 	if err != nil {
 		fmt.Println("ERR: " + err.Error())
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}
-
+	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
 	switch v["event"].(map[string]interface{})["type"].(string) {
 	case "message":
 		var message EventMessage
@@ -67,7 +73,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("ERR: " + err.Error())
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
-		fmt.Println(message.Text)
+		fmt.Println(message.Event.Text)
 	case "link_shared":
 		fmt.Println("It's a link!")
 		var link EventLinkShared
@@ -76,7 +82,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 			fmt.Println("ERR: " + err.Error())
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
-		fmt.Println(link.Links[0].URL)
+		fmt.Println(link.Event.Links[0].URL)
 	}
 }
 
@@ -126,6 +132,7 @@ func routing() {
 	http.HandleFunc("/add", addToSlack)
 	http.HandleFunc("/auth", auth)
 	http.HandleFunc("/event", event)
+	http.HandleFunc("/booky", bookyCommand)
 	http.HandleFunc("/", home)
 
 }
