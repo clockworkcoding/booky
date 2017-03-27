@@ -31,10 +31,27 @@ var globalState state
 
 // writeError writes an error to the reply - example only
 func writeError(w http.ResponseWriter, status int, err string) {
+	fmt.Printf("Err: %s", err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(err))
-	fmt.Printf("Err: %s", err)
+}
+
+func buttonPressed(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("ssl_check") == "1" {
+		w.Write([]byte("OK"))
+		fmt.Println("ssl check")
+		return
+	}
+	var action Action
+	payload := r.FormValue("payload")
+	err := json.Unmarshal([]byte(payload), &action)
+	if err != nil {
+		fmt.Println("err: " + err.Error())
+		return
+	}
+	fmt.Printf("User %s pressed user %s's button!", action.User.ID, action.Actions[0].Value)
+
 }
 
 func bookyCommand(w http.ResponseWriter, r *http.Request) {
@@ -42,6 +59,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	channel := r.FormValue("channel_id")
 	teamID := r.FormValue("team_id")
 	userName := r.FormValue("user_name")
+	userID := r.FormValue("user_id")
 	token, _, err := getAuth(teamID)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, err.Error())
@@ -53,15 +71,43 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		return
 	}
+
+	if err != nil {
+		return
+	}
+
+	values := buttonValues{
+		Index: 1,
+		User:  userID,
+		Query: queryText,
+	}
+
+	jsonValues, err := json.Marshal(values)
+	if err != nil {
+		return
+	}
+
+	buttons := slack.Attachment{
+		CallbackID: "bookbuttons",
+		Fallback:   "Try using both the title and the author's name",
+		Actions: []slack.AttachmentAction{
+			slack.AttachmentAction{
+				Name:  "wrongbook",
+				Text:  "Wrong Book?",
+				Type:  "button",
+				Value: string(jsonValues),
+			},
+		},
+	}
+	params.Attachments = append(params.Attachments, buttons)
 	api := slack.New(token)
 	params.Username = userName
 	params.AsUser = false
-	ch, ts, err := api.PostMessage(channel, params.Text, params)
+	_, _, err = api.PostMessage(channel, params.Text, params)
 	if err != nil {
-		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
+		fmt.Printf("Error posting: %s\n", err.Error())
 		return
 	}
-	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
 
 }
 
@@ -211,15 +257,22 @@ func main() {
 	}
 
 	routing()
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
 func routing() {
-	http.HandleFunc("/add", addToSlack)
-	http.HandleFunc("/auth", auth)
-	http.HandleFunc("/event", event)
-	http.HandleFunc("/booky", bookyCommand)
-	http.HandleFunc("/", home)
+
+	mux := http.NewServeMux()
+
+	mux.Handle("/add", http.HandlerFunc(addToSlack))
+	mux.Handle("/auth", http.HandlerFunc(auth))
+	mux.Handle("/event", http.HandlerFunc(event))
+	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
+	mux.Handle("/button", http.HandlerFunc(buttonPressed))
+	mux.Handle("/", http.HandlerFunc(home))
+	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+	if err != nil {
+		log.Fatal("ListenAndServe error: ", err)
+	}
 
 }
 

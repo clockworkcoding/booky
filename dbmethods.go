@@ -46,5 +46,5 @@ func getAuth(teamID string) (token, channelid string, err error) {
 		}
 		return
 	}
-	return token, channelid, errors.New("Team not found")
+	return token, channelid, errors.New(fmt.Sprintf("Team %s not found", teamID))
 }
