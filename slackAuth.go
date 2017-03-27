@@ -28,7 +28,10 @@ func auth(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(oAuthResponse.IncomingWebhook.Channel)
 
 	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", oAuthResponse.TeamName, oAuthResponse.UserID)))
-	saveSlackAuth(oAuthResponse)
+	if err = saveSlackAuth(oAuthResponse); err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 }
 
@@ -38,7 +41,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, 10)
 	_, err := rand.Read(b)
 	if err != nil {
-		writeError(w, 500, err.Error())
+		writeError(w, http.StatusInternalServerError, err.Error())
 	}
 
 	conf := &oauth2.Config{

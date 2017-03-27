@@ -11,6 +11,7 @@ import (
 
 	"github.com/clockworkcoding/goodreads"
 	_ "github.com/lib/pq"
+	"github.com/nlopes/slack"
 )
 
 var (
@@ -31,11 +32,30 @@ func writeError(w http.ResponseWriter, status int, err string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(err))
+	fmt.Printf("Err: %s", err)
 }
 
 func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	queryText := r.FormValue("text")
+	channel := r.FormValue("channel_id")
+	teamID := r.FormValue("team_id")
+	userName := r.FormValue("user_name")
+	token, _, err := getAuth(teamID)
+	if err != nil {
+		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
 	w.Write([]byte("Looking up your book using " + queryText + "..."))
+	api := slack.New(token)
+	params := slack.NewPostMessageParameters()
+	params.Username = userName
+	params.Text = queryText
+	ch, ts, err := api.PostMessage(channel, "Lets see if this works", params)
+	if err != nil {
+		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
+		return
+	}
+	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
 
 }
 
@@ -46,7 +66,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 	var v map[string]interface{}
 	err := decoder.Decode(&v)
 	if err != nil {
-		fmt.Println("ERR: " + err.Error())
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -61,7 +80,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 	}
 	event, err := json.Marshal(v)
 	if err != nil {
-		fmt.Println("ERR: " + err.Error())
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}
 	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
@@ -70,7 +88,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 		var message EventMessage
 		err := json.Unmarshal(event, &message)
 		if err != nil {
-			fmt.Println("ERR: " + err.Error())
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
 		fmt.Println(message.Event.Text)
@@ -79,7 +96,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 		var link EventLinkShared
 		err := json.Unmarshal(event, &link)
 		if err != nil {
-			fmt.Println("ERR: " + err.Error())
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
 		fmt.Println(link.Event.Links[0].URL)
