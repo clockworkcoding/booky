@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/clockworkcoding/goodreads"
+	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
-	"github.com/nlopes/slack"
 )
 
 var (
@@ -31,10 +31,90 @@ var globalState state
 
 // writeError writes an error to the reply - example only
 func writeError(w http.ResponseWriter, status int, err string) {
+	fmt.Printf("Err: %s", err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(err))
 	fmt.Printf("Err: %s", err)
+}
+
+func buttonPressed(w http.ResponseWriter, r *http.Request) {
+	if r.FormValue("ssl_check") == "1" {
+		w.Write([]byte("OK"))
+		fmt.Println("ssl check")
+		return
+	}
+	var action action
+	payload := r.FormValue("payload")
+	err := json.Unmarshal([]byte(payload), &action)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	if action.Token == config.Slack.VerificationToken {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
+	}
+	fmt.Printf("User %s pressed user %s's button!", action.User.ID, action.Actions[0].Value)
+
+	var values buttonValues
+	err = json.Unmarshal([]byte(action.Actions[0].Value), &values)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+	token, _, err := getAuth(action.Team.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	api := slack.New(token)
+	if action.User.ID != values.User {
+		responseParams := slack.NewResponseMessageParameters()
+		responseParams.ResponseType = "ephemeral"
+		responseParams.ReplaceOriginal = false
+		responseParams.Text = fmt.Sprintf("Only the user that called Booky can update this book")
+		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+
+		}
+		return
+
+	}
+
+	values.Index++
+
+	params, err := createBookPost(values)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	var v map[string]interface{}
+	err = json.Unmarshal(action.OriginalMessage, &v)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	updateParams := slack.UpdateMessageParameters{
+		Timestamp:   v["ts"].(string),
+		Text:        params.Text,
+		Attachments: params.Attachments,
+		Parse:       params.Parse,
+		LinkNames:   params.LinkNames,
+		AsUser:      params.AsUser,
+	}
+
+	_, _, _, err = api.UpdateMessageWithAttachments(action.Channel.ID, updateParams)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 }
 
 func bookyCommand(w http.ResponseWriter, r *http.Request) {
@@ -42,30 +122,37 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	channel := r.FormValue("channel_id")
 	teamID := r.FormValue("team_id")
 	userName := r.FormValue("user_name")
+	userID := r.FormValue("user_id")
 	token, _, err := getAuth(teamID)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	w.Write([]byte("Looking up your book using " + queryText + "..."))
+	w.Write([]byte("Looking up your book..."))
 
-	params, err := createBookPost(queryText)
+	values := buttonValues{
+		Index: 0,
+		User:  userID,
+		Query: queryText,
+	}
+
+	params, err := createBookPost(values)
 	if err != nil {
 		return
 	}
+
 	api := slack.New(token)
 	params.Username = userName
 	params.AsUser = false
-	ch, ts, err := api.PostMessage(channel, params.Text, params)
+	_, _, err = api.PostMessage(channel, params.Text, params)
 	if err != nil {
-		fmt.Printf("Error posting: %s\nToken:%s\n", err.Error(), token)
+		fmt.Printf("Error posting: %s\n", err.Error())
 		return
 	}
-	fmt.Printf("Ch: %s \nTs: %s\n", ch, ts)
 
 }
 
-func checkTextForBook(message EventMessage) {
+func checkTextForBook(message eventMessage) {
 	tokenized := strings.Split(message.Event.Text, "_")
 	if len(tokenized) < 2 {
 		return
@@ -77,8 +164,12 @@ func checkTextForBook(message EventMessage) {
 	if err != nil || channel != authedChannel {
 		return
 	}
-
-	params, err := createBookPost(queryText)
+	values := buttonValues{
+		User:  message.Event.User,
+		Query: queryText,
+		Index: 0,
+	}
+	params, err := createBookPost(values)
 	if err != nil {
 		return
 	}
@@ -91,15 +182,20 @@ func checkTextForBook(message EventMessage) {
 	}
 }
 
-func createBookPost(queryText string) (params slack.PostMessageParameters, err error) {
+func createBookPost(values buttonValues) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 
-	results, err := gr.GetSearch(queryText)
+	results, err := gr.GetSearch(values.Query)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	book, err := gr.GetBook(results.Search_work[0].Search_best_book.Search_id.Text)
+
+	if values.Index >= len(results.Search_work) {
+		values.Index = 0
+	}
+
+	book, err := gr.GetBook(results.Search_work[values.Index].Search_best_book.Search_id.Text)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -110,6 +206,11 @@ func createBookPost(queryText string) (params slack.PostMessageParameters, err e
 	var stars string
 	for i := 0; i < int(numRating+0.5); i++ {
 		stars += ":star:"
+	}
+
+	jsonValues, err := json.Marshal(values)
+	if err != nil {
+		return
 	}
 
 	attachments := []slack.Attachment{
@@ -138,6 +239,34 @@ func createBookPost(queryText string) (params slack.PostMessageParameters, err e
 		},
 	}
 
+	nextBookButton := slack.AttachmentAction{
+		Name:  "next book",
+		Text:  "Wrong Book?",
+		Type:  "button",
+		Value: string(jsonValues),
+	}
+	wrongBookButtons := slack.Attachment{
+		CallbackID: "wrongbook",
+		Fallback:   "Try using both the title and the author's name",
+		Actions:    []slack.AttachmentAction{},
+	}
+
+	if values.Index >= 1 {
+		values.Index -= 2
+
+		jsonValues, _ := json.Marshal(values)
+
+		prevBookButton := slack.AttachmentAction{
+			Name:  "previousbook",
+			Text:  "Previous",
+			Type:  "button",
+			Value: string(jsonValues),
+		}
+		nextBookButton.Text = "Next"
+		wrongBookButtons.Actions = append(wrongBookButtons.Actions, prevBookButton)
+	}
+	wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton)
+	attachments = append(attachments, wrongBookButtons)
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
 	params.AsUser = false
@@ -160,7 +289,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	if v["type"] == "challenge" {
+	if v["type"].(string) == "url_verification" {
 		w.Write([]byte(v["challenge"].(string)))
 		return
 	}
@@ -171,15 +300,16 @@ func event(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
 	switch v["event"].(map[string]interface{})["type"].(string) {
 	case "message":
-		var message EventMessage
+		var message eventMessage
 		err := json.Unmarshal(event, &message)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
+			return
 		}
 		fmt.Println(message.Event.Text)
 		checkTextForBook(message)
 	case "link_shared":
-		var link EventLinkShared
+		var link eventLinkShared
 		err := json.Unmarshal(event, &link)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -211,15 +341,22 @@ func main() {
 	}
 
 	routing()
-	log.Fatal(http.ListenAndServe(":"+os.Getenv("PORT"), nil))
 }
 
 func routing() {
-	http.HandleFunc("/add", addToSlack)
-	http.HandleFunc("/auth", auth)
-	http.HandleFunc("/event", event)
-	http.HandleFunc("/booky", bookyCommand)
-	http.HandleFunc("/", home)
+
+	mux := http.NewServeMux()
+
+	mux.Handle("/add", http.HandlerFunc(addToSlack))
+	mux.Handle("/auth", http.HandlerFunc(auth))
+	mux.Handle("/event", http.HandlerFunc(event))
+	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
+	mux.Handle("/button", http.HandlerFunc(buttonPressed))
+	mux.Handle("/", http.HandlerFunc(home))
+	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
+	if err != nil {
+		log.Fatal("ListenAndServe error: ", err)
+	}
 
 }
 

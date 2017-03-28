@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
-	"github.com/nlopes/slack"
 )
 
 func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
@@ -46,5 +46,6 @@ func getAuth(teamID string) (token, channelid string, err error) {
 		}
 		return
 	}
+
 	return token, channelid, errors.New("Team not found")
 }
