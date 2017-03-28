@@ -1,6 +1,8 @@
 package main
 
-type EventMessage struct {
+import "encoding/json"
+
+type eventMessage struct {
 	Token    string `json:"token"`
 	TeamID   string `json:"team_id"`
 	APIAppID string `json:"api_app_id"`
@@ -17,7 +19,7 @@ type EventMessage struct {
 	EventTime   int      `json:"event_time"`
 }
 
-type EventLinkShared struct {
+type eventLinkShared struct {
 	Token    string `json:"token"`
 	TeamID   string `json:"team_id"`
 	APIAppID string `json:"api_app_id"`
@@ -37,8 +39,42 @@ type EventLinkShared struct {
 	EventTime   int      `json:"event_time"`
 }
 
-type Challenge struct {
+type challenge struct {
 	Token     string `json:"token"`
 	Challenge string `json:"challenge"`
 	Type      string `json:"type"`
+}
+
+type buttonValues struct {
+	User  string `json:"user"`
+	Query string `json:"query"`
+	Index int    `json:"index"`
+}
+
+type action struct {
+	Actions []struct {
+		Name  string `json:"name"`
+		Type  string `json:"type"`
+		Value string `json:"value"`
+	} `json:"actions"`
+	CallbackID string `json:"callback_id"`
+	Team       struct {
+		ID     string `json:"id"`
+		Domain string `json:"domain"`
+	} `json:"team"`
+	Channel struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"channel"`
+	User struct {
+		ID   string `json:"id"`
+		Name string `json:"name"`
+	} `json:"user"`
+	ActionTs        string          `json:"action_ts"`
+	MessageTs       string          `json:"message_ts"`
+	AttachmentID    string          `json:"attachment_id"`
+	Token           string          `json:"token"`
+	IsAppUnfurl     bool            `json:"is_app_unfurl"`
+	OriginalMessage json.RawMessage `json:"original_message"`
+	ResponseURL     string          `json:"response_url"`
 }
