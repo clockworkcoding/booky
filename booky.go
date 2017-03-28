@@ -234,18 +234,7 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 			MarkdownIn: []string{"text", "fields"},
 		},
 		slack.Attachment{
-			Fields: []slack.AttachmentField{
-				slack.AttachmentField{
-					Title: "See it on Goodreads:",
-					Value: book.Book_url.Text,
-					Short: true,
-				},
-				slack.AttachmentField{
-					Title: "Buy it on Amazon",
-					Value: book.Book_url.Text,
-					Short: true,
-				},
-			},
+			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
 		},
 	}
 
