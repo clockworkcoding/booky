@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
-	"github.com/nlopes/slack"
 )
 
 func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {

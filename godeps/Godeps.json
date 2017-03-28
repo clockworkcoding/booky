@@ -8,6 +8,11 @@
 			"Rev": "bd5e51e37f01fffa43ce0441a0715d35e0baedf0"
 		},
 		{
+			"ImportPath": "github.com/clockworkcoding/slack",
+			"Comment": "v0.0.1-177-g7b625af",
+			"Rev": "7b625af330d6dd43dd59837c9d0ff684ec7050cf"
+		},
+		{
 			"ImportPath": "github.com/dghubble/oauth1",
 			"Comment": "v0.4.0-14-g3c7784d",
 			"Rev": "3c7784d12fed88888d612324ea6897f7dc30723e"
@@ -21,16 +26,6 @@
 			"ImportPath": "github.com/lib/pq/oid",
 			"Comment": "go1.0-cutoff-166-g2704adc",
 			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
-		},
-		{
-			"ImportPath": "github.com/mkungla/slack",
-			"Comment": "v0.0.1-177-g7b625af",
-			"Rev": "7b625af330d6dd43dd59837c9d0ff684ec7050cf"
-		},
-		{
-			"ImportPath": "github.com/nlopes/slack",
-			"Comment": "v0.0.1-176-g6519657",
-			"Rev": "6519657c021b7add19c4ef48220140cca0b1657b"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",

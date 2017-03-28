@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	"github.com/nlopes/slack"
+	"github.com/clockworkcoding/slack"
 
 	_ "github.com/lib/pq"
 )

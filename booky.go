@@ -12,8 +12,8 @@ import (
 	"time"
 
 	"github.com/clockworkcoding/goodreads"
+	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
-	"github.com/mkungla/slack"
 )
 
 var (
