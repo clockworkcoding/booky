@@ -19,6 +19,7 @@ const (
 	DEFAULT_MESSAGE_ICON_EMOJI       = ""
 	DEFAULT_MESSAGE_MARKDOWN         = true
 	DEFAULT_MESSAGE_ESCAPE_TEXT      = true
+	DEFAULT_MESSAGE_RESPONSE_TYPE    = "in_channel"
 )
 
 type chatResponseFull struct {

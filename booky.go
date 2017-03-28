@@ -43,12 +43,17 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("ssl check")
 		return
 	}
-	var action Action
+	var action action
 	payload := r.FormValue("payload")
 	err := json.Unmarshal([]byte(payload), &action)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
+	}
+	if action.Token == config.Slack.VerificationToken {
+		w.WriteHeader(http.StatusOK)
+	} else {
+		writeError(w, http.StatusUnauthorized, "Unauthorized")
 	}
 	fmt.Printf("User %s pressed user %s's button!", action.User.ID, action.Actions[0].Value)
 
@@ -58,8 +63,28 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	token, _, err := getAuth(action.Team.ID)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	api := slack.New(token)
 	if action.User.ID != values.User {
-		writeError(w, http.StatusUnauthorized, "Only the original poster can choose the book")
+		fmt.Println("Oops, wrong user...")
+		responseParams := slack.NewResponseMessageParameters()
+		fmt.Println("got params...")
+		responseParams.ResponseType = "ephemeral"
+		responseParams.ReplaceOriginal = false
+		responseParams.Text = fmt.Sprintf("Only the user that called Booky can update this book")
+		fmt.Println("Attempting to post response...")
+		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+
+		}
+		return
+
 	}
 
 	values.Index++
@@ -86,13 +111,6 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		AsUser:      params.AsUser,
 	}
 
-	token, _, err := getAuth(action.Team.ID)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	api := slack.New(token)
 	_, _, _, err = api.UpdateMessageWithAttachments(action.Channel.ID, updateParams)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -136,7 +154,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 
 }
 
-func checkTextForBook(message EventMessage) {
+func checkTextForBook(message eventMessage) {
 	tokenized := strings.Split(message.Event.Text, "_")
 	if len(tokenized) < 2 {
 		return
@@ -283,7 +301,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
 	switch v["event"].(map[string]interface{})["type"].(string) {
 	case "message":
-		var message EventMessage
+		var message eventMessage
 		err := json.Unmarshal(event, &message)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -292,7 +310,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 		fmt.Println(message.Event.Text)
 		checkTextForBook(message)
 	case "link_shared":
-		var link EventLinkShared
+		var link eventLinkShared
 		err := json.Unmarshal(event, &link)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())

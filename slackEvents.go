@@ -2,7 +2,7 @@ package main
 
 import "encoding/json"
 
-type EventMessage struct {
+type eventMessage struct {
 	Token    string `json:"token"`
 	TeamID   string `json:"team_id"`
 	APIAppID string `json:"api_app_id"`
@@ -19,7 +19,7 @@ type EventMessage struct {
 	EventTime   int      `json:"event_time"`
 }
 
-type EventLinkShared struct {
+type eventLinkShared struct {
 	Token    string `json:"token"`
 	TeamID   string `json:"team_id"`
 	APIAppID string `json:"api_app_id"`
@@ -39,7 +39,7 @@ type EventLinkShared struct {
 	EventTime   int      `json:"event_time"`
 }
 
-type Challenge struct {
+type challenge struct {
 	Token     string `json:"token"`
 	Challenge string `json:"challenge"`
 	Type      string `json:"type"`
@@ -51,7 +51,7 @@ type buttonValues struct {
 	Index int    `json:"index"`
 }
 
-type Action struct {
+type action struct {
 	Actions []struct {
 		Name  string `json:"name"`
 		Type  string `json:"type"`

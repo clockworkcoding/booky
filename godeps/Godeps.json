@@ -9,8 +9,8 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-177-g7b625af",
-			"Rev": "7b625af330d6dd43dd59837c9d0ff684ec7050cf"
+			"Comment": "v0.0.1-178-g642b721",
+			"Rev": "642b721ddfcef7646d3b10102cbd6a58fa4f0773"
 		},
 		{
 			"ImportPath": "github.com/dghubble/oauth1",
