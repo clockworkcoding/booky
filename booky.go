@@ -71,13 +71,10 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 
 	api := slack.New(token)
 	if action.User.ID != values.User {
-		fmt.Println("Oops, wrong user...")
 		responseParams := slack.NewResponseMessageParameters()
-		fmt.Println("got params...")
 		responseParams.ResponseType = "ephemeral"
 		responseParams.ReplaceOriginal = false
 		responseParams.Text = fmt.Sprintf("Only the user that called Booky can update this book")
-		fmt.Println("Attempting to post response...")
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -237,7 +234,18 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 			MarkdownIn: []string{"text", "fields"},
 		},
 		slack.Attachment{
-			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
+			Fields: []slack.AttachmentField{
+				slack.AttachmentField{
+					Title: "See it on Goodreads:",
+					Value: book.Book_url.Text,
+					Short: true,
+				},
+				slack.AttachmentField{
+					Title: "Buy it on Amazon",
+					Value: book.Book_url.Text,
+					Short: true,
+				},
+			},
 		},
 	}
 
@@ -264,6 +272,7 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 			Type:  "button",
 			Value: string(jsonValues),
 		}
+		nextBookButton.Text = "Next"
 		wrongBookButtons.Actions = append(wrongBookButtons.Actions, prevBookButton)
 	}
 	wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton)
