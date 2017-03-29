@@ -46,9 +46,10 @@ type challenge struct {
 }
 
 type buttonValues struct {
-	User  string `json:"user"`
-	Query string `json:"query"`
-	Index int    `json:"index"`
+	User        string `json:"user"`
+	Query       string `json:"query"`
+	Index       int    `json:"index"`
+	IsEphemeral bool   `json:"is_ephemeral"`
 }
 
 type action struct {
