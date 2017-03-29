@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -42,7 +41,6 @@ func writeError(w http.ResponseWriter, status int, err string) {
 func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("ssl_check") == "1" {
 		w.Write([]byte("OK"))
-		fmt.Println("ssl check")
 		return
 	}
 	var action action
@@ -164,7 +162,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	w.Write([]byte("Looking up your book..."))
+	w.WriteHeader(http.StatusOK)
 
 	values := buttonValues{
 		Index:       0,
@@ -290,12 +288,14 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 			Name:  "nvm",
 			Text:  "nvm",
 			Type:  "button",
+			Style: "danger",
 			Value: string(nextValues),
 		}
 		rightBookButton := slack.AttachmentAction{
 			Name:  "right book",
 			Text:  ":thumbsup:",
 			Type:  "button",
+			Style: "primary",
 			Value: string(rightValues),
 		}
 		wrongBookButtons := slack.Attachment{
@@ -323,28 +323,6 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 	params.Attachments = attachments
 	return
 }
-func (values *buttonValues) encodeValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User)
-}
-func (values *buttonValues) decodeValues(valueString string) (err error) {
-	valueStrings := strings.Split(valueString, "|+|")
-	if len(valueStrings) < 4 {
-		err = errors.New("not enough values")
-		return
-	}
-	index, err := strconv.ParseInt(valueStrings[0], 10, 32)
-	if err != nil {
-		return
-	}
-	values.Index = int(index)
-	values.IsEphemeral, err = strconv.ParseBool(valueStrings[1])
-	if err != nil {
-		return
-	}
-	values.Query = valueStrings[2]
-	values.User = valueStrings[3]
-	return
-}
 
 // event responds to events from slack
 func event(w http.ResponseWriter, r *http.Request) {
@@ -370,7 +348,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
 	switch v["event"].(map[string]interface{})["type"].(string) {
 	case "message":
 		var message eventMessage
@@ -379,7 +356,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		fmt.Println(message.Event.Text)
 		checkTextForBook(message)
 	case "link_shared":
 		var link eventLinkShared
