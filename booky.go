@@ -76,7 +76,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		responseParams := slack.NewResponseMessageParameters()
 		responseParams.ResponseType = "ephemeral"
 		responseParams.ReplaceOriginal = false
-		responseParams.Text = fmt.Sprintf("Only the user that called Booky can update this book")
+		responseParams.Text = fmt.Sprintf("Only %s can update this book", values.UserName)
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
@@ -128,7 +128,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
 	} else if values.IsEphemeral {
-		params.AsUser = true
+		params.AsUser = false
 		defer w.Write([]byte("Posting your book"))
 		_, _, err = api.PostMessage(action.Channel.ID, params.Text, params)
 		if err != nil {
@@ -157,6 +157,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	queryText := r.FormValue("text")
 	teamID := r.FormValue("team_id")
 	userID := r.FormValue("user_id")
+	userName := r.FormValue("user_name")
 	responseURL := r.FormValue("response_url")
 	token, _, err := getAuth(teamID)
 	if err != nil {
@@ -170,6 +171,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		User:        userID,
 		Query:       queryText,
 		IsEphemeral: true,
+		UserName:    userName,
 	}
 
 	params, err := createBookPost(values, true)
@@ -205,13 +207,14 @@ func checkTextForBook(message eventMessage) {
 		Query:       queryText,
 		Index:       0,
 		IsEphemeral: false,
+		UserName:    "booky user",
 	}
 	params, err := createBookPost(values, true)
 	if err != nil {
 		return
 	}
 	api := slack.New(token)
-	params.AsUser = true
+	params.AsUser = false
 	_, _, err = api.PostMessage(channel, params.Text, params)
 	if err != nil {
 		fmt.Printf("Error posting: %s\n", err.Error())
@@ -269,7 +272,7 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 		slack.Attachment{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     "Posted using /booky | Book data from Goodreads",
+			Footer:     fmt.Sprintf("Posted by %s using /booky | Data from Goodreads.com", values.UserName),
 		},
 	}
 	if wrongBookButtons {

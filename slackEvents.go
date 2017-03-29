@@ -53,17 +53,18 @@ type challenge struct {
 
 type buttonValues struct {
 	User        string `json:"user"`
+	UserName    string `json:"user_name"`
 	Query       string `json:"query"`
 	Index       int    `json:"index"`
 	IsEphemeral bool   `json:"is_ephemeral"`
 }
 
 func (values *buttonValues) encodeValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User)
+	return fmt.Sprintf("%v|+|%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User, values.UserName)
 }
 func (values *buttonValues) decodeValues(valueString string) (err error) {
 	valueStrings := strings.Split(valueString, "|+|")
-	if len(valueStrings) < 4 {
+	if len(valueStrings) < 5 {
 		err = errors.New("not enough values")
 		return
 	}
@@ -78,6 +79,7 @@ func (values *buttonValues) decodeValues(valueString string) (err error) {
 	}
 	values.Query = valueStrings[2]
 	values.User = valueStrings[3]
+	values.UserName = valueStrings[4]
 	return
 }
 
