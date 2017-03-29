@@ -121,7 +121,6 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		responseParams.ResponseType = "ephemeral"
 		responseParams.ReplaceOriginal = true
 		responseParams.Text = params.Text
-		responseParams.AsUser = true
 		responseParams.Attachments = params.Attachments
 		if action.Actions[0].Name == "right book" {
 			responseParams.ResponseType = "in_channel"
@@ -179,7 +178,6 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	responseParams.ResponseType = "ephemeral"
 	responseParams.ReplaceOriginal = true
 	responseParams.Text = params.Text
-	responseParams.AsUser = true
 	responseParams.Attachments = params.Attachments
 	api := slack.New(token)
 	err = api.PostResponse(responseURL, responseParams.Text, responseParams)
