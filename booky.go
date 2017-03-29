@@ -41,11 +41,11 @@ func writeError(w http.ResponseWriter, status int, err string) {
 func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	if r.FormValue("ssl_check") == "1" {
 		w.Write([]byte("OK"))
-		fmt.Println("ssl check")
 		return
 	}
 	var action action
 	payload := r.FormValue("payload")
+
 	err := json.Unmarshal([]byte(payload), &action)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -55,15 +55,16 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	} else {
 		writeError(w, http.StatusUnauthorized, "Unauthorized")
+		return
 	}
-	fmt.Printf("User %s pressed user %s's button!", action.User.ID, action.Actions[0].Value)
 
 	var values buttonValues
-	err = json.Unmarshal([]byte(action.Actions[0].Value), &values)
+	err = values.decodeValues(action.Actions[0].Value)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+
 	token, _, err := getAuth(action.Team.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
@@ -84,72 +85,107 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
-
-	values.Index++
-
-	params, err := createBookPost(values)
-	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
-		return
-	}
-
+	var timestamp string
 	var v map[string]interface{}
 	err = json.Unmarshal(action.OriginalMessage, &v)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		timestamp = ""
+	} else {
+		timestamp = v["ts"].(string)
+	}
+	wrongBookButtons := true
+	switch action.Actions[0].Name {
+	case "right book":
+		wrongBookButtons = false
+	case "nvm":
+		_, _, err = api.DeleteMessage(action.Channel.ID, timestamp)
+		if err != nil {
+			if !values.IsEphemeral {
+				writeError(w, http.StatusInternalServerError, err.Error())
+			} else {
+				w.Write([]byte("Sorry you couldn't find your book. Try search for both the author and title together"))
+			}
+
+		}
 		return
 	}
 
-	updateParams := slack.UpdateMessageParameters{
-		Timestamp:   v["ts"].(string),
-		Text:        params.Text,
-		Attachments: params.Attachments,
-		Parse:       params.Parse,
-		LinkNames:   params.LinkNames,
-		AsUser:      params.AsUser,
-	}
-
-	_, _, _, err = api.UpdateMessageWithAttachments(action.Channel.ID, updateParams)
+	params, err := createBookPost(values, wrongBookButtons)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	//If it's an ephemeral post, replace it with an in_channel post after finding the right one, otherwise just update
+	if values.IsEphemeral {
+		responseParams := slack.NewResponseMessageParameters()
+		responseParams.ResponseType = "ephemeral"
+		responseParams.ReplaceOriginal = true
+		responseParams.Text = params.Text
+		responseParams.AsUser = true
+		responseParams.Attachments = params.Attachments
+		if action.Actions[0].Name == "right book" {
+			responseParams.ResponseType = "in_channel"
+			responseParams.ReplaceOriginal = false
+			values.IsEphemeral = false
+			defer w.Write([]byte("Posting your book"))
+		}
+		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
 
+		}
+	} else {
+		updateParams := slack.UpdateMessageParameters{
+			Timestamp:   timestamp,
+			Text:        params.Text,
+			Attachments: params.Attachments,
+			Parse:       params.Parse,
+			LinkNames:   params.LinkNames,
+			AsUser:      params.AsUser,
+		}
+
+		_, _, _, err = api.UpdateMessageWithAttachments(action.Channel.ID, updateParams)
+		if err != nil {
+			writeError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+	}
 }
 
 func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	queryText := r.FormValue("text")
-	channel := r.FormValue("channel_id")
 	teamID := r.FormValue("team_id")
-	userName := r.FormValue("user_name")
 	userID := r.FormValue("user_id")
+	responseURL := r.FormValue("response_url")
 	token, _, err := getAuth(teamID)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	w.Write([]byte("Looking up your book..."))
+	w.WriteHeader(http.StatusOK)
 
 	values := buttonValues{
-		Index: 0,
-		User:  userID,
-		Query: queryText,
+		Index:       0,
+		User:        userID,
+		Query:       queryText,
+		IsEphemeral: true,
 	}
 
-	params, err := createBookPost(values)
+	params, err := createBookPost(values, true)
 	if err != nil {
 		return
 	}
-
+	responseParams := slack.NewResponseMessageParameters()
+	responseParams.ResponseType = "ephemeral"
+	responseParams.ReplaceOriginal = true
+	responseParams.Text = params.Text
+	responseParams.AsUser = true
+	responseParams.Attachments = params.Attachments
 	api := slack.New(token)
-	params.Username = userName
-	params.AsUser = false
-	_, _, err = api.PostMessage(channel, params.Text, params)
+	err = api.PostResponse(responseURL, responseParams.Text, responseParams)
 	if err != nil {
-		fmt.Printf("Error posting: %s\n", err.Error())
-		return
+		writeError(w, http.StatusInternalServerError, err.Error())
 	}
-
 }
 
 func checkTextForBook(message eventMessage) {
@@ -165,11 +201,12 @@ func checkTextForBook(message eventMessage) {
 		return
 	}
 	values := buttonValues{
-		User:  message.Event.User,
-		Query: queryText,
-		Index: 0,
+		User:        message.Event.User,
+		Query:       queryText,
+		Index:       0,
+		IsEphemeral: false,
 	}
-	params, err := createBookPost(values)
+	params, err := createBookPost(values, true)
 	if err != nil {
 		return
 	}
@@ -182,7 +219,7 @@ func checkTextForBook(message eventMessage) {
 	}
 }
 
-func createBookPost(values buttonValues) (params slack.PostMessageParameters, err error) {
+func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 
 	results, err := gr.GetSearch(values.Query)
@@ -208,10 +245,7 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 		stars += ":star:"
 	}
 
-	jsonValues, err := json.Marshal(values)
-	if err != nil {
-		return
-	}
+	rightValues := values.encodeValues()
 
 	attachments := []slack.Attachment{
 		slack.Attachment{
@@ -238,35 +272,51 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
 		},
 	}
-
-	nextBookButton := slack.AttachmentAction{
-		Name:  "next book",
-		Text:  "Wrong Book?",
-		Type:  "button",
-		Value: string(jsonValues),
-	}
-	wrongBookButtons := slack.Attachment{
-		CallbackID: "wrongbook",
-		Fallback:   "Try using both the title and the author's name",
-		Actions:    []slack.AttachmentAction{},
-	}
-
-	if values.Index >= 1 {
+	if wrongBookButtons {
+		values.Index += 1
+		nextValues := values.encodeValues()
 		values.Index -= 2
+		prevValues := values.encodeValues()
 
-		jsonValues, _ := json.Marshal(values)
-
-		prevBookButton := slack.AttachmentAction{
-			Name:  "previousbook",
-			Text:  "Previous",
+		nextBookButton := slack.AttachmentAction{
+			Name:  "next book",
+			Text:  "Wrong Book?",
 			Type:  "button",
-			Value: string(jsonValues),
+			Value: string(nextValues),
 		}
-		nextBookButton.Text = "Next"
-		wrongBookButtons.Actions = append(wrongBookButtons.Actions, prevBookButton)
+		nvmBookButton := slack.AttachmentAction{
+			Name:  "nvm",
+			Text:  "nvm",
+			Type:  "button",
+			Style: "danger",
+			Value: string(nextValues),
+		}
+		rightBookButton := slack.AttachmentAction{
+			Name:  "right book",
+			Text:  ":thumbsup:",
+			Type:  "button",
+			Style: "primary",
+			Value: string(rightValues),
+		}
+		wrongBookButtons := slack.Attachment{
+			CallbackID: "wrongbook",
+			Fallback:   "Try using both the title and the author's name",
+			Actions:    []slack.AttachmentAction{},
+		}
+
+		if values.Index >= 0 {
+			prevBookButton := slack.AttachmentAction{
+				Name:  "previousbook",
+				Text:  "previous",
+				Type:  "button",
+				Value: string(prevValues),
+			}
+			nextBookButton.Text = "next"
+			wrongBookButtons.Actions = append(wrongBookButtons.Actions, prevBookButton)
+		}
+		wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton, nvmBookButton, rightBookButton)
+		attachments = append(attachments, wrongBookButtons)
 	}
-	wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton)
-	attachments = append(attachments, wrongBookButtons)
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
 	params.AsUser = false
@@ -296,8 +346,8 @@ func event(w http.ResponseWriter, r *http.Request) {
 	event, err := json.Marshal(v)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
+		return
 	}
-	fmt.Println(v["event"].(map[string]interface{})["type"].(string))
 	switch v["event"].(map[string]interface{})["type"].(string) {
 	case "message":
 		var message eventMessage
@@ -306,7 +356,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		fmt.Println(message.Event.Text)
 		checkTextForBook(message)
 	case "link_shared":
 		var link eventLinkShared
