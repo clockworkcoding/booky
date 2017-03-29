@@ -116,22 +116,24 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	//If it's an ephemeral post, replace it with an in_channel post after finding the right one, otherwise just update
-	if values.IsEphemeral {
+	if values.IsEphemeral && action.Actions[0].Name != "right book" {
 		responseParams := slack.NewResponseMessageParameters()
 		responseParams.ResponseType = "ephemeral"
 		responseParams.ReplaceOriginal = true
 		responseParams.Text = params.Text
 		responseParams.Attachments = params.Attachments
-		if action.Actions[0].Name == "right book" {
-			responseParams.ResponseType = "in_channel"
-			responseParams.ReplaceOriginal = false
-			values.IsEphemeral = false
-			defer w.Write([]byte("Posting your book"))
-		}
+
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
-
+		}
+	} else if values.IsEphemeral {
+		params.AsUser = true
+		defer w.Write([]byte("Posting your book"))
+		_, _, err = api.PostMessage(action.Channel.ID, params.Text, params)
+		if err != nil {
+			fmt.Printf("Error posting: %s\n", err.Error())
+			return
 		}
 	} else {
 		updateParams := slack.UpdateMessageParameters{
@@ -209,7 +211,7 @@ func checkTextForBook(message eventMessage) {
 		return
 	}
 	api := slack.New(token)
-	params.AsUser = false
+	params.AsUser = true
 	_, _, err = api.PostMessage(channel, params.Text, params)
 	if err != nil {
 		fmt.Printf("Error posting: %s\n", err.Error())
@@ -247,6 +249,8 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 
 	attachments := []slack.Attachment{
 		slack.Attachment{
+			Title:      book.Book_title[0].Text,
+			TitleLink:  book.Book_url.Text,
 			AuthorName: book.Book_authors[0].Book_author.Book_name.Text,
 			ThumbURL:   book.Book_image_url[0].Text,
 			Fields: []slack.AttachmentField{
@@ -265,9 +269,7 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 		slack.Attachment{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-		},
-		slack.Attachment{
-			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
+			Footer:     "Posted using /booky | Book data from Goodreads",
 		},
 	}
 	if wrongBookButtons {
@@ -317,7 +319,7 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
-	params.AsUser = false
+	params.AsUser = true
 	params.Attachments = attachments
 	return
 }
