@@ -56,7 +56,6 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	} else {
 		writeError(w, http.StatusUnauthorized, "Unauthorized")
 	}
-	fmt.Printf("User %s pressed user %s's button!", action.User.ID, action.Actions[0].Value)
 
 	var values buttonValues
 	err = json.Unmarshal([]byte(action.Actions[0].Value), &values)
@@ -84,10 +83,12 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		return
 
 	}
+	wrongBookButtons := true
+	if action.Actions[0].Name == "right book" {
+		wrongBookButtons = false
+	}
 
-	values.Index++
-
-	params, err := createBookPost(values)
+	params, err := createBookPost(values, wrongBookButtons)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -136,7 +137,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		Query: queryText,
 	}
 
-	params, err := createBookPost(values)
+	params, err := createBookPost(values, true)
 	if err != nil {
 		return
 	}
@@ -169,7 +170,7 @@ func checkTextForBook(message eventMessage) {
 		Query: queryText,
 		Index: 0,
 	}
-	params, err := createBookPost(values)
+	params, err := createBookPost(values, true)
 	if err != nil {
 		return
 	}
@@ -182,7 +183,7 @@ func checkTextForBook(message eventMessage) {
 	}
 }
 
-func createBookPost(values buttonValues) (params slack.PostMessageParameters, err error) {
+func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 
 	results, err := gr.GetSearch(values.Query)
@@ -208,7 +209,17 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 		stars += ":star:"
 	}
 
-	jsonValues, err := json.Marshal(values)
+	rightValues, err := json.Marshal(values)
+	if err != nil {
+		return
+	}
+	values.Index += 1
+	nextValues, err := json.Marshal(values)
+	if err != nil {
+		return
+	}
+	values.Index -= 2
+	prevValues, err := json.Marshal(values)
 	if err != nil {
 		return
 	}
@@ -238,35 +249,40 @@ func createBookPost(values buttonValues) (params slack.PostMessageParameters, er
 			Text: fmt.Sprintf("See it on Goodreads: %s", book.Book_url.Text),
 		},
 	}
+	if wrongBookButtons {
 
-	nextBookButton := slack.AttachmentAction{
-		Name:  "next book",
-		Text:  "Wrong Book?",
-		Type:  "button",
-		Value: string(jsonValues),
-	}
-	wrongBookButtons := slack.Attachment{
-		CallbackID: "wrongbook",
-		Fallback:   "Try using both the title and the author's name",
-		Actions:    []slack.AttachmentAction{},
-	}
-
-	if values.Index >= 1 {
-		values.Index -= 2
-
-		jsonValues, _ := json.Marshal(values)
-
-		prevBookButton := slack.AttachmentAction{
-			Name:  "previousbook",
-			Text:  "Previous",
+		nextBookButton := slack.AttachmentAction{
+			Name:  "next book",
+			Text:  "Wrong Book?",
 			Type:  "button",
-			Value: string(jsonValues),
+			Value: string(nextValues),
 		}
-		nextBookButton.Text = "Next"
-		wrongBookButtons.Actions = append(wrongBookButtons.Actions, prevBookButton)
+		rightBookButton := slack.AttachmentAction{
+			Name:  "right book",
+			Text:  ":thumbsup:",
+			Type:  "button",
+			Value: string(rightValues),
+		}
+		wrongBookButtons := slack.Attachment{
+			CallbackID: "wrongbook",
+			Fallback:   "Try using both the title and the author's name",
+			Actions:    []slack.AttachmentAction{},
+		}
+
+		if values.Index >= 0 {
+			prevBookButton := slack.AttachmentAction{
+				Name:  "previousbook",
+				Text:  "Previous",
+				Type:  "button",
+				Value: string(prevValues),
+			}
+			nextBookButton.Text = "Next"
+			wrongBookButtons.Actions = append(wrongBookButtons.Actions, prevBookButton)
+		}
+		wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton)
+		wrongBookButtons.Actions = append(wrongBookButtons.Actions, rightBookButton)
+		attachments = append(attachments, wrongBookButtons)
 	}
-	wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton)
-	attachments = append(attachments, wrongBookButtons)
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
 	params.AsUser = false
