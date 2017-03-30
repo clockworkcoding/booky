@@ -1,8 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -103,7 +105,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 			if !values.IsEphemeral {
 				writeError(w, http.StatusInternalServerError, err.Error())
 			} else {
-				w.Write([]byte("Sorry you couldn't find your book. Try search for both the author and title together"))
+				w.Write([]byte("Sorry you couldn't find your book. Try searching for both the author and title together"))
 			}
 
 		}
@@ -112,7 +114,11 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 
 	params, err := createBookPost(values, wrongBookButtons)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		if err.Error() == "no books found" {
+			w.Write([]byte("No books found, try a broader search"))
+		} else {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	//If it's an ephemeral post, replace it with an in_channel post after finding the right one, otherwise just update
@@ -164,7 +170,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	w.WriteHeader(http.StatusOK)
+	w.Write([]byte(""))
 
 	values := buttonValues{
 		Index:       0,
@@ -176,6 +182,11 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 
 	params, err := createBookPost(values, true)
 	if err != nil {
+		if err.Error() == "no books found" {
+			w.Write([]byte("No books found, try a broader search"))
+		} else {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 	responseParams := slack.NewResponseMessageParameters()
@@ -230,6 +241,10 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 		fmt.Println(err.Error())
 		return
 	}
+	if len(results.Search_work) == 0 {
+		err = errors.New("no books found")
+		return
+	}
 
 	if values.Index >= len(results.Search_work) {
 		values.Index = 0
@@ -239,6 +254,18 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 	if err != nil {
 		fmt.Println(err.Error())
 		return
+	}
+
+	var authorBuffer bytes.Buffer
+	for i, author := range book.Book_authors[0].Book_author {
+		if i > 0 {
+			authorBuffer.WriteString(" | ")
+		}
+		if author.Book_role.Text != "" {
+			authorBuffer.WriteString(author.Book_role.Text)
+			authorBuffer.WriteString(": ")
+		}
+		authorBuffer.WriteString(author.Book_name.Text)
 	}
 
 	rating := book.Book_average_rating[0].Text
@@ -254,7 +281,7 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 		slack.Attachment{
 			Title:      book.Book_title[0].Text,
 			TitleLink:  book.Book_url.Text,
-			AuthorName: book.Book_authors[0].Book_author.Book_name.Text,
+			AuthorName: authorBuffer.String(),
 			ThumbURL:   book.Book_image_url[0].Text,
 			Fields: []slack.AttachmentField{
 				slack.AttachmentField{
@@ -264,7 +291,7 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 				},
 				slack.AttachmentField{
 					Title: "Ratings",
-					Value: book.Book_ratings_count.Text,
+					Value: book.Book_ratings_count[0].Text,
 					Short: true,
 				},
 			},
