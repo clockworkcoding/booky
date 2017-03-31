@@ -170,7 +170,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	w.Write([]byte(""))
+	w.Write([]byte("Looking up your book"))
 
 	values := buttonValues{
 		Index:       0,
