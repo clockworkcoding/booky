@@ -3,12 +3,6 @@ package main
 import "strings"
 
 func replaceMarkup(s string) string {
-	s = strings.Replace(s, "—", "-", -1)
-	s = strings.Replace(s, "“", "\"", -1)
-	s = strings.Replace(s, "”", "\"", -1)
-	s = strings.Replace(s, "’", "\"", -1)
-	s = strings.Replace(s, "‘", "\"", -1)
-	s = strings.Replace(s, ";", ";", -1)
 	s = strings.Replace(s, "<b>", "*", -1)
 	s = strings.Replace(s, "</b>", "*", -1)
 	s = strings.Replace(s, "<em>", "_", -1)
