@@ -88,7 +88,7 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 }
 
 func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT token, channelid FROM slack_auth WHERE teamid = '%s' ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID))
+	rows, err := db.Query(fmt.Sprintf("SELECT id, token, channelid FROM slack_auth WHERE teamid = '%s' ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID))
 	if err != nil {
 		return
 	}

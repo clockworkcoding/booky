@@ -347,6 +347,19 @@ func createBookPost(values buttonValues, wrongBookButtons bool) (params slack.Po
 		wrongBookButtons.Actions = append(wrongBookButtons.Actions, nextBookButton, nvmBookButton, rightBookButton)
 		attachments = append(attachments, wrongBookButtons)
 	}
+	goodreadsButtons := slack.Attachment{
+		CallbackID: "goodreads",
+		Fallback:   "Something went wrong, try again later",
+		Actions: []slack.AttachmentAction{
+			slack.AttachmentAction{
+				Name:  "addToShelf",
+				Text:  "Add to your Goodreads shelf",
+				Type:  "button",
+				Value: book.Book_id[0].Text,
+			},
+		},
+	}
+	attachments = append(attachments, goodreadsButtons)
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
 	params.AsUser = true
