@@ -32,15 +32,17 @@ func goodreadsButton(w http.ResponseWriter, action action, token string) {
 		return
 	}
 
+	var attachments []slack.Attachment
 	var shelfButtons []slack.AttachmentAction
 	for i, shelf := range shelves.Shelf_user_shelf {
-		if i > 4 { //TODO: better handling for many shelves
-			break
+		if (i+1)%5 == 0 {
+			attachments = append(attachments, newGoodreadsButtonGroup(shelfButtons))
+			shelfButtons = []slack.AttachmentAction{}
 		}
 		values.shelfID = shelf.Shelf_id.Text
 		button := slack.AttachmentAction{
-			Name:  "addToShelf",
-			Text:  "Add to your shelf",
+			Name:  "selectedShelf",
+			Text:  shelf.Shelf_name.Text,
 			Type:  "button",
 			Value: values.encodeValues(),
 		}
@@ -50,7 +52,7 @@ func goodreadsButton(w http.ResponseWriter, action action, token string) {
 	params.ResponseType = "ephemeral"
 	params.ReplaceOriginal = false
 	params.Text = "Which shelf?"
-	params.Attachments = []slack.Attachment{}
+	params.Attachments = attachments
 	params.Attachments = append(params.Attachments, newGoodreadsButtonGroup(shelfButtons))
 
 	api := slack.New(token)
@@ -69,6 +71,7 @@ func goodreadsAuthMessage(w http.ResponseWriter, action action, token string) {
 		slack.Attachment{
 			Title:     "Connect to Goodreads",
 			TitleLink: fmt.Sprintf("%s/gradd?team=%s&user=%s", config.URL, action.Team.ID, action.User.ID),
+			Text:      "Try the action again when you're done",
 		},
 	}
 
