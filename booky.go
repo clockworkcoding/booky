@@ -67,7 +67,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	token, _, err := getAuth(action.Team.ID)
+	_, token, _, err := getSlackAuth(action.Team.ID)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -165,7 +165,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	userID := r.FormValue("user_id")
 	userName := r.FormValue("user_name")
 	responseURL := r.FormValue("response_url")
-	token, _, err := getAuth(teamID)
+	_, token, _, err := getSlackAuth(teamID)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
@@ -209,7 +209,7 @@ func checkTextForBook(message eventMessage) {
 	queryText := tokenized[1]
 	channel := message.Event.Channel
 	teamID := message.TeamID
-	token, authedChannel, err := getAuth(teamID)
+	_, token, authedChannel, err := getSlackAuth(teamID)
 	if err != nil || channel != authedChannel {
 		return
 	}
@@ -410,6 +410,7 @@ type Configuration struct {
 	Db struct {
 		URI string `json:"URI"`
 	} `json:"db"`
+	URL string `json:"URL"`
 }
 
 func main() {
@@ -427,7 +428,9 @@ func routing() {
 	mux := http.NewServeMux()
 
 	mux.Handle("/add", http.HandlerFunc(addToSlack))
-	mux.Handle("/auth", http.HandlerFunc(auth))
+	mux.Handle("/auth", http.HandlerFunc(slackAuth))
+	mux.Handle("/gradd", http.HandlerFunc(addToGoodreads))
+	mux.Handle("/grauth", http.HandlerFunc(goodReadsAuth))
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
@@ -452,6 +455,7 @@ func readConfig() Configuration {
 		configuration.Goodreads.Key = os.Getenv("GOODREADS_KEY")
 		configuration.Db.URI = os.Getenv("DATABASE_URL")
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
+		configuration.URL = os.Getenv("URL")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

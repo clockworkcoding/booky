@@ -13,7 +13,7 @@ import (
 )
 
 // auth receives the callback from Slack, validates and displays the user information
-func auth(w http.ResponseWriter, r *http.Request) {
+func slackAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
@@ -46,7 +46,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"channels:history", "incoming-webhook", "links:read", "links:write", "chat:write:user", "chat:write:bot", "commands", "chat:write:user"},
+		Scopes:       []string{"channels:history", "incoming-webhook", "links:read", "links:write", "chat:write:bot", "commands"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://slack.com/oauth/authorize",
 			TokenURL: "https://slack.com/api/oauth.access", // not actually used here
