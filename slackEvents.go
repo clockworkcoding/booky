@@ -1,12 +1,6 @@
 package main
 
-import (
-	"encoding/json"
-	"errors"
-	"fmt"
-	"strconv"
-	"strings"
-)
+import "encoding/json"
 
 type eventMessage struct {
 	Token    string `json:"token"`
@@ -49,38 +43,6 @@ type challenge struct {
 	Token     string `json:"token"`
 	Challenge string `json:"challenge"`
 	Type      string `json:"type"`
-}
-
-type buttonValues struct {
-	User        string `json:"user"`
-	UserName    string `json:"user_name"`
-	Query       string `json:"query"`
-	Index       int    `json:"index"`
-	IsEphemeral bool   `json:"is_ephemeral"`
-}
-
-func (values *buttonValues) encodeValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User, values.UserName)
-}
-func (values *buttonValues) decodeValues(valueString string) (err error) {
-	valueStrings := strings.Split(valueString, "|+|")
-	if len(valueStrings) < 5 {
-		err = errors.New("not enough values")
-		return
-	}
-	index, err := strconv.ParseInt(valueStrings[0], 10, 32)
-	if err != nil {
-		return
-	}
-	values.Index = int(index)
-	values.IsEphemeral, err = strconv.ParseBool(valueStrings[1])
-	if err != nil {
-		return
-	}
-	values.Query = valueStrings[2]
-	values.User = valueStrings[3]
-	values.UserName = valueStrings[4]
-	return
 }
 
 type action struct {

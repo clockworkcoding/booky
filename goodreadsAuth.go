@@ -34,7 +34,13 @@ func goodreadsAuthCallback(w http.ResponseWriter, r *http.Request) {
 	auth.token = accessToken.Token
 	auth.secret = accessToken.Secret
 
-	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", auth.teamID, auth.userID)))
+	c = goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
+	grUser, err := c.QueryUser()
+	if err != nil {
+		writeError(w, 401, err.Error())
+		return
+	}
+	auth.goodreadsUserID = grUser.Attr_id
 	if err = saveGoodreadsAuth(auth); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -58,10 +64,10 @@ func addToGoodreads(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Printf("%s got token %s and secret %s\n", userID, rtoken.Token, rtoken.Secret)
 	auth := goodreadsAuth{
-		secret: rtoken.Secret,
-		token:  rtoken.Token,
-		userID: userID,
-		teamID: teamID,
+		secret:      rtoken.Secret,
+		token:       rtoken.Token,
+		slackUserID: userID,
+		teamID:      teamID,
 	}
 	err = saveGoodreadsAuth(auth)
 	if err != nil {

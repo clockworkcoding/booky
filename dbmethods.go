@@ -14,7 +14,8 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS goodreads_auth (
 			id serial,
 			teamid varchar(200),
-			userid varchar(200),
+			slackuserid varchar(200),
+			goodreadsuserid varchar(200),
 			token varchar(200),
 			secret varchar(200),
 			createdtime	timestamp
@@ -25,14 +26,10 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 	if param.id != 0 {
 		if _, err = db.Exec(fmt.Sprintf(`UPDATE goodreads_auth
 	SET token = '%s' ,
-	secret = '%s'
+	secret = '%s',
+	goodreadsuserid = '%s'
 	where id = %v`,
-			param.token, param.secret, param.id)); err != nil {
-			fmt.Printf(`UPDATE goodreads_auth
-		SET token = '%s' ,
-		secret = '%s'
-		where id = %v\n`,
-				param.token, param.secret, param.id)
+			param.token, param.secret, param.goodreadsUserID, param.id)); err != nil {
 			fmt.Println("Error saving goodreads auth: " + err.Error())
 			return
 		}
@@ -40,12 +37,13 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 	} else {
 		if _, err = db.Exec(fmt.Sprintf(`INSERT INTO goodreads_auth(
 		teamid ,
-		userid ,
+		slackuserid ,
+		goodreadsuserid,
 		token ,
 		secret ,
 		createdtime
-		) VALUES ('%s','%s','%s','%s', now())`,
-			param.teamID, param.userID, param.token, param.secret)); err != nil {
+		) VALUES ('%s','%s','%s','%s','%s', now())`,
+			param.teamID, param.slackUserID, param.goodreadsUserID, param.token, param.secret)); err != nil {
 			fmt.Println("Error saving goodreads auth: " + err.Error())
 			return
 		}
@@ -105,16 +103,17 @@ func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
 }
 
 type goodreadsAuth struct {
-	id     int
-	teamID string
-	userID string
-	token  string
-	secret string
+	id              int
+	teamID          string
+	slackUserID     string
+	goodreadsUserID string
+	token           string
+	secret          string
 }
 
 func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
 	var query bytes.Buffer
-	query.WriteString("SELECT id, teamid, userid, token, secret FROM goodreads_auth WHERE 1 = 1 ")
+	query.WriteString("SELECT id, teamid, slackuserid, goodreadsuserid, token, secret FROM goodreads_auth WHERE 1 = 1 ")
 	if param.id != 0 {
 		query.WriteString(" AND id = ")
 		query.WriteString(string(param.id))
@@ -124,9 +123,14 @@ func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
 		query.WriteString(param.teamID)
 		query.WriteString("'")
 	}
-	if param.userID != "" {
-		query.WriteString(" AND userid = '")
-		query.WriteString(param.userID)
+	if param.slackUserID != "" {
+		query.WriteString(" AND slackuserid = '")
+		query.WriteString(param.slackUserID)
+		query.WriteString("'")
+	}
+	if param.goodreadsUserID != "" {
+		query.WriteString(" AND goodreadsuserid = '")
+		query.WriteString(param.goodreadsUserID)
 		query.WriteString("'")
 	}
 	if param.token != "" {
@@ -147,7 +151,7 @@ func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err = rows.Scan(&result.id, &result.teamID, &result.userID, &result.token, &result.secret); err != nil {
+		if err = rows.Scan(&result.id, &result.teamID, &result.slackUserID, &result.goodreadsUserID, &result.token, &result.secret); err != nil {
 			fmt.Println("Error scanning auth:" + err.Error())
 			return
 		}
