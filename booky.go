@@ -430,7 +430,7 @@ func routing() {
 	mux.Handle("/add", http.HandlerFunc(addToSlack))
 	mux.Handle("/auth", http.HandlerFunc(slackAuth))
 	mux.Handle("/gradd", http.HandlerFunc(addToGoodreads))
-	mux.Handle("/grauth", http.HandlerFunc(goodReadsAuth))
+	mux.Handle("/grauth", http.HandlerFunc(goodreadsAuthCallback))
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
