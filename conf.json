@@ -9,5 +9,6 @@
   },
   "db" : {
     "URI" : "{your key here}"
-  }
+  },
+  "URL" : "{your url here}"
 }
