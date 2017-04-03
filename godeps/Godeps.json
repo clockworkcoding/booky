@@ -5,7 +5,7 @@
 	"Deps": [
 		{
 			"ImportPath": "github.com/clockworkcoding/goodreads",
-			"Rev": "61c69b57d4c4eedc28f55b63ef019976dd1607bd"
+			"Rev": "830618df1a5488592fcbd14bc9b8fb9da197d030"
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
