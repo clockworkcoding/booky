@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/clockworkcoding/goodreads"
@@ -45,6 +44,7 @@ func goodreadsAuthCallback(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	w.Write([]byte("You've successfully logged into Goodreads!"))
 
 }
 
@@ -62,7 +62,7 @@ func addToGoodreads(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
-	fmt.Printf("%s got token %s and secret %s\n", userID, rtoken.Token, rtoken.Secret)
+
 	auth := goodreadsAuth{
 		secret:      rtoken.Secret,
 		token:       rtoken.Token,

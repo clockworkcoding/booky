@@ -117,6 +117,7 @@ func goodreadsAuthMessage(w http.ResponseWriter, action action, token, text stri
 	params.Text = text
 	params.Attachments = []slack.Attachment{
 		slack.Attachment{
+			ThumbURL:  "https://s.gr-assets.com/assets/icons/goodreads_icon_100x100-4a7d81b31d932cfc0be621ee15a14e70.png",
 			Title:     "Connect to Goodreads",
 			TitleLink: fmt.Sprintf("%s/gradd?team=%s&user=%s", config.URL, action.Team.ID, action.User.ID),
 			Text:      "Try the action again when you're done",

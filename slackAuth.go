@@ -26,7 +26,7 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", oAuthResponse.TeamName, oAuthResponse.UserID)))
+	w.Write([]byte(fmt.Sprintf("Booky has been added to %s", oAuthResponse.TeamName)))
 	if err = saveSlackAuth(oAuthResponse); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
