@@ -26,7 +26,7 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("OAuth successful for team %s and user %s", oAuthResponse.TeamName, oAuthResponse.UserID)))
+	w.Write([]byte(fmt.Sprintf("Booky has been added to %s", oAuthResponse.TeamName)))
 	if err = saveSlackAuth(oAuthResponse); err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
@@ -46,7 +46,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"channels:history", "incoming-webhook", "links:read", "links:write", "chat:write:bot", "commands"},
+		Scopes:       []string{"links:read", "links:write", "chat:write:bot", "commands"},
 		Endpoint: oauth2.Endpoint{
 			AuthURL:  "https://slack.com/oauth/authorize",
 			TokenURL: "https://slack.com/api/oauth.access", // not actually used here
@@ -58,5 +58,5 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 
 // home displays the add-to-slack button
 func home(w http.ResponseWriter, r *http.Request) {
-	w.Write([]byte(`<html><head><title>Slack OAuth Test</title></head><body><a href="https://slack.com/oauth/authorize?&client_id=87777690085.158899563392&scope=links:read,channels:history"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a></body></html>`))
+	w.Write([]byte(`<html><head><title>Slack OAuth Test</title></head><body><a href="/add"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a></body></html>`))
 }
