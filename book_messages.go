@@ -248,24 +248,23 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		return
 	}
 	//If it's an ephemeral post, replace it with an in_channel post after finding the right one, otherwise just update
-	if values.IsEphemeral && action.Actions[0].Name != "right book" {
+	if values.IsEphemeral {
 		responseParams := slack.NewResponseMessageParameters()
-		responseParams.ResponseType = "ephemeral"
-		responseParams.ReplaceOriginal = true
 		responseParams.Text = params.Text
 		responseParams.Attachments = params.Attachments
+
+		if action.Actions[0].Name == "right book" {
+			defer w.Write([]byte("Posting your book"))
+			responseParams.ReplaceOriginal = false
+			responseParams.ResponseType = "in_channel"
+		} else {
+			responseParams.ReplaceOriginal = true
+			responseParams.ResponseType = "ephemeral"
+		}
 
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
-		}
-	} else if values.IsEphemeral {
-		params.AsUser = false
-		defer w.Write([]byte("Posting your book"))
-		_, _, err = api.PostMessage(action.Channel.ID, params.Text, params)
-		if err != nil {
-			fmt.Printf("Error posting: %s\n", err.Error())
-			return
 		}
 	} else {
 		updateParams := slack.UpdateMessageParameters{
