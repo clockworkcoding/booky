@@ -195,7 +195,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 	var values wrongBookButtonValues
 	err := values.decodeValues(action.Actions[0].Value)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 
@@ -207,7 +207,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		responseParams.Text = fmt.Sprintf("Only %s can update this book", values.UserName)
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(action.ResponseURL, err.Error(), token)
 
 		}
 		return
@@ -264,7 +264,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(action.ResponseURL, err.Error(), token)
 		}
 	} else {
 		updateParams := slack.UpdateMessageParameters{
