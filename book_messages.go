@@ -138,7 +138,19 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 				Value: values.encodeValues(),
 			},
 		}
-		attachments = append(attachments, newGoodreadsButtonGroup(buttons))
+		goodreadsAttachment := newGoodreadsButtonGroup(buttons)
+		var amazonLink string
+		switch {
+		case len(book.Book_isbn13) > 0:
+			amazonLink = getAmazonAffiliateLink(book.Book_isbn13[0].Text)
+		case len(book.Book_isbn) > 0:
+			amazonLink = getAmazonAffiliateLink(book.Book_isbn[0].Text)
+		}
+		if amazonLink != "" {
+			goodreadsAttachment.AuthorName = "Buy it on Amazon"
+			goodreadsAttachment.AuthorLink = amazonLink
+		}
+		attachments = append(attachments, goodreadsAttachment)
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
