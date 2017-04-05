@@ -138,7 +138,19 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 				Value: values.encodeValues(),
 			},
 		}
-		attachments = append(attachments, newGoodreadsButtonGroup(buttons))
+		goodreadsAttachment := newGoodreadsButtonGroup(buttons)
+		var amazonLink string
+		switch {
+		case len(book.Book_isbn13) > 0:
+			amazonLink = getAmazonAffiliateLink(book.Book_isbn13[0].Text)
+		case len(book.Book_isbn) > 0:
+			amazonLink = getAmazonAffiliateLink(book.Book_isbn[0].Text)
+		}
+		if amazonLink != "" {
+			goodreadsAttachment.AuthorName = "Buy it on Amazon"
+			goodreadsAttachment.AuthorLink = amazonLink
+		}
+		attachments = append(attachments, goodreadsAttachment)
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
@@ -195,7 +207,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 	var values wrongBookButtonValues
 	err := values.decodeValues(action.Actions[0].Value)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 
@@ -207,7 +219,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		responseParams.Text = fmt.Sprintf("Only %s can update this book", values.UserName)
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(action.ResponseURL, err.Error(), token)
 
 		}
 		return
@@ -248,24 +260,23 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		return
 	}
 	//If it's an ephemeral post, replace it with an in_channel post after finding the right one, otherwise just update
-	if values.IsEphemeral && action.Actions[0].Name != "right book" {
+	if values.IsEphemeral {
 		responseParams := slack.NewResponseMessageParameters()
-		responseParams.ResponseType = "ephemeral"
-		responseParams.ReplaceOriginal = true
 		responseParams.Text = params.Text
 		responseParams.Attachments = params.Attachments
 
+		if action.Actions[0].Name == "right book" {
+			defer w.Write([]byte("Posting your book"))
+			responseParams.ReplaceOriginal = false
+			responseParams.ResponseType = "in_channel"
+		} else {
+			responseParams.ReplaceOriginal = true
+			responseParams.ResponseType = "ephemeral"
+		}
+
 		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
-		}
-	} else if values.IsEphemeral {
-		params.AsUser = false
-		defer w.Write([]byte("Posting your book"))
-		_, _, err = api.PostMessage(action.Channel.ID, params.Text, params)
-		if err != nil {
-			fmt.Printf("Error posting: %s\n", err.Error())
-			return
+			responseError(action.ResponseURL, err.Error(), token)
 		}
 	} else {
 		updateParams := slack.UpdateMessageParameters{

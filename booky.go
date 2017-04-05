@@ -33,7 +33,24 @@ func writeError(w http.ResponseWriter, status int, err string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(err))
-	fmt.Printf("Err: %s", err)
+	log.Fatal(fmt.Sprintf("Err: %s", err))
+}
+
+func responseError(error, responseURL, token string) {
+	log.Output(1, fmt.Sprintf("Err: %s", error))
+	params := slack.NewResponseMessageParameters()
+	params.ResponseType = "ephemeral"
+	params.ReplaceOriginal = false
+	params.Text = fmt.Sprintf("An error occured: %s", error)
+
+	api := slack.New(token)
+	err := api.PostResponse(responseURL, params.Text, params)
+	if err != nil {
+		//something is very wrong if we ever get here
+
+		log.Fatal(fmt.Sprintf("Err: %s", err.Error))
+	}
+
 }
 
 func buttonPressed(w http.ResponseWriter, r *http.Request) {
@@ -96,7 +113,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		if err.Error() == "no books found" {
 			w.Write([]byte("No books found, try a broader search"))
 		} else {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(responseURL, err.Error(), token)
 		}
 		return
 	}
@@ -108,7 +125,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	api := slack.New(token)
 	err = api.PostResponse(responseURL, responseParams.Text, responseParams)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(responseURL, err.Error(), token)
 	}
 }
 

@@ -38,12 +38,12 @@ func goodreadsAddToShelf(w http.ResponseWriter, action action, token string, val
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
 	err := c.AddBookToShelf(values.bookID, values.shelfName)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 	shelf, err := c.ReviewList(auth.goodreadsUserID, goodreads.ReviewListParameters{Shelf: values.shelfName})
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 	if title := checkIfBookAdded(shelf, values); title != "" {
@@ -55,7 +55,7 @@ func goodreadsAddToShelf(w http.ResponseWriter, action action, token string, val
 		api := slack.New(token)
 		err = api.PostResponse(action.ResponseURL, params.Text, params)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(action.ResponseURL, err.Error(), token)
 		}
 	} else {
 		goodreadsAuthMessage(w, action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
