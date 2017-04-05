@@ -133,6 +133,8 @@ func goodreadsAuthMessage(w http.ResponseWriter, action action, token, text stri
 
 func newGoodreadsButtonGroup(buttons []slack.AttachmentAction) slack.Attachment {
 	return slack.Attachment{
+		AuthorName: "Buy it on amazon",
+		AuthorLink: "http://www.amazon.com",
 		CallbackID: "goodreads",
 		Fallback:   "Something went wrong, try again later",
 		Actions:    buttons,
