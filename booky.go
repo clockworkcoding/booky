@@ -135,6 +135,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkTextForBook(message eventMessage) {
+	fmt.Printf("Message Text: %v", message.Event.Text)
 	tokenized := strings.Split(message.Event.Text, "_")
 	if len(tokenized) < 2 {
 		return
@@ -144,6 +145,11 @@ func checkTextForBook(message eventMessage) {
 	teamID := message.TeamID
 	_, token, authedChannel, err := getSlackAuth(teamID)
 	if err != nil || channel != authedChannel {
+		if err != nil {
+			log.Output(0, err.Error())
+		} else {
+			fmt.Printf("Found: %s, Expected %s", channel, authedChannel)
+		}
 		return
 	}
 	values := wrongBookButtonValues{
@@ -155,6 +161,7 @@ func checkTextForBook(message eventMessage) {
 	}
 	params, err := createBookPost(values, true)
 	if err != nil {
+		log.Output(0, err.Error())
 		return
 	}
 	api := slack.New(token)

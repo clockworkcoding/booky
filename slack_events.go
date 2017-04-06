@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"time"
 )
 
 type eventMessage struct {
@@ -10,16 +9,18 @@ type eventMessage struct {
 	TeamID   string `json:"team_id"`
 	APIAppID string `json:"api_app_id"`
 	Event    struct {
+		SubType string `json:"subtype"`
 		Type    string `json:"type"`
 		Channel string `json:"channel"`
 		User    string `json:"user"`
 		Text    string `json:"text"`
 		Ts      string `json:"ts"`
+		EventTs string `json:"event_ts"`
 	} `json:"event"`
-	Type        string    `json:"type"`
-	AuthedUsers []string  `json:"authed_users"`
-	EventID     string    `json:"event_id"`
-	EventTime   time.Time `json:"event_time"`
+	Type        string          `json:"type"`
+	AuthedUsers []string        `json:"authed_users"`
+	EventID     string          `json:"event_id"`
+	EventTime   json.RawMessage `json:"event_time"`
 }
 
 type eventLinkShared struct {
@@ -36,10 +37,10 @@ type eventLinkShared struct {
 			URL    string `json:"url"`
 		} `json:"links"`
 	} `json:"event"`
-	Type        string    `json:"type"`
-	AuthedUsers []string  `json:"authed_users"`
-	EventID     string    `json:"event_id"`
-	EventTime   time.Time `json:"event_time"`
+	Type        string          `json:"type"`
+	AuthedUsers []string        `json:"authed_users"`
+	EventID     string          `json:"event_id"`
+	EventTime   json.RawMessage `json:"event_time"`
 }
 
 type challenge struct {

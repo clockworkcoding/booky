@@ -5,12 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/clockworkcoding/goodreads"
+	"github.com/clockworkcoding/slack"
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/clockworkcoding/goodreads"
-	"github.com/clockworkcoding/slack"
 )
 
 func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
@@ -138,6 +137,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 				Value: values.encodeValues(),
 			},
 		}
+
 		goodreadsAttachment := newGoodreadsButtonGroup(buttons)
 		var amazonLink string
 		switch {
