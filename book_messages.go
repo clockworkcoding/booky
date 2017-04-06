@@ -217,7 +217,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		responseParams.ResponseType = "ephemeral"
 		responseParams.ReplaceOriginal = false
 		responseParams.Text = fmt.Sprintf("Only %s can update this book", values.UserName)
-		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
+		err = api.PostResponse(action.ResponseURL, responseParams)
 		if err != nil {
 			responseError(action.ResponseURL, err.Error(), token)
 
@@ -274,7 +274,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 			responseParams.ResponseType = "ephemeral"
 		}
 
-		err = api.PostResponse(action.ResponseURL, responseParams.Text, responseParams)
+		err = api.PostResponse(action.ResponseURL, responseParams)
 		if err != nil {
 			responseError(action.ResponseURL, err.Error(), token)
 		}
