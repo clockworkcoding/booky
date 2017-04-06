@@ -3,7 +3,6 @@ package slack
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"net/http"
 )
 
@@ -29,9 +28,7 @@ func NewResponseMessageParameters() ResponseMessageParameters {
 // PostResponse sends a message in response to a Slash Command or Action.
 // Message is escaped by default according to https://api.slack.com/docs/formatting
 // Use http://davestevens.github.io/slack-message-builder/ to help crafting your message.
-func (api *Client) PostResponse(responseUrl, text string, params ResponseMessageParameters) error {
-	fmt.Println("Post Response Start")
-
+func (api *Client) PostResponse(responseUrl string, params ResponseMessageParameters) error {
 	jsonStr, err := json.Marshal(params)
 	req, err := http.NewRequest("POST", responseUrl, bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
@@ -39,7 +36,7 @@ func (api *Client) PostResponse(responseUrl, text string, params ResponseMessage
 	client := &http.Client{}
 	_, err = client.Do(req)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	return err
 }

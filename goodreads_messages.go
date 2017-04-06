@@ -53,7 +53,7 @@ func goodreadsAddToShelf(w http.ResponseWriter, action action, token string, val
 		params.Text = fmt.Sprintf("Succesfully added %s to shelf %s.", title, values.shelfName)
 
 		api := slack.New(token)
-		err = api.PostResponse(action.ResponseURL, params.Text, params)
+		err = api.PostResponse(action.ResponseURL, params)
 		if err != nil {
 			responseError(action.ResponseURL, err.Error(), token)
 		}
@@ -104,7 +104,7 @@ func goodreadsShowShelves(w http.ResponseWriter, action action, token string, va
 	params.Attachments = append(params.Attachments, newGoodreadsButtonGroup(shelfButtons))
 
 	api := slack.New(token)
-	err = api.PostResponse(action.ResponseURL, params.Text, params)
+	err = api.PostResponse(action.ResponseURL, params)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}
@@ -125,7 +125,7 @@ func goodreadsAuthMessage(w http.ResponseWriter, action action, token, text stri
 	}
 
 	api := slack.New(token)
-	err := api.PostResponse(action.ResponseURL, params.Text, params)
+	err := api.PostResponse(action.ResponseURL, params)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}

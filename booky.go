@@ -36,19 +36,21 @@ func writeError(w http.ResponseWriter, status int, err string) {
 	log.Fatal(fmt.Sprintf("Err: %s", err))
 }
 
-func responseError(error, responseURL, token string) {
-	log.Output(1, fmt.Sprintf("Err: %s", error))
+func responseError(responseURL, message, token string) {
+	log.Output(1, fmt.Sprintf("Err: %s", message))
+	simpleResponse(responseURL, message, token)
+}
+
+func simpleResponse(responseURL, message, token string) {
 	params := slack.NewResponseMessageParameters()
 	params.ResponseType = "ephemeral"
 	params.ReplaceOriginal = false
-	params.Text = fmt.Sprintf("An error occured: %s", error)
+	params.Text = message
 
 	api := slack.New(token)
-	err := api.PostResponse(responseURL, params.Text, params)
+	err := api.PostResponse(responseURL, params)
 	if err != nil {
-		//something is very wrong if we ever get here
-
-		log.Fatal(fmt.Sprintf("Err: %s", err.Error))
+		log.Output(1, fmt.Sprintf("Err: %s", err.Error))
 	}
 
 }
@@ -77,6 +79,8 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	w.Write([]byte(""))
+	go simpleResponse(action.ResponseURL, "", token)
 
 	switch action.CallbackID {
 	case "wrongbook":
@@ -98,7 +102,8 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
-	w.Write([]byte("Looking up your book"))
+	w.Write([]byte(""))
+	go simpleResponse(responseURL, "Looking up your book", token)
 
 	values := wrongBookButtonValues{
 		Index:       0,
@@ -111,7 +116,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	params, err := createBookPost(values, true)
 	if err != nil {
 		if err.Error() == "no books found" {
-			w.Write([]byte("No books found, try a broader search"))
+			responseError(responseURL, "No books found, try a broader search", token)
 		} else {
 			responseError(responseURL, err.Error(), token)
 		}
@@ -123,7 +128,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	responseParams.Text = params.Text
 	responseParams.Attachments = params.Attachments
 	api := slack.New(token)
-	err = api.PostResponse(responseURL, responseParams.Text, responseParams)
+	err = api.PostResponse(responseURL, responseParams)
 	if err != nil {
 		responseError(responseURL, err.Error(), token)
 	}
