@@ -58,7 +58,5 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 
 // home displays the add-to-slack button
 func home(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("reached the home method")
 	w.Write([]byte(`<html><head><title>Slack OAuth Test</title></head><body><a href="/add"><img alt="Add to Slack" height="40" width="139" src="https://platform.slack-edge.com/img/add_to_slack.png" srcset="https://platform.slack-edge.com/img/add_to_slack.png 1x, https://platform.slack-edge.com/img/add_to_slack@2x.png 2x" /></a></body></html>`))
-	fmt.Println("Did write")
 }
