@@ -5,11 +5,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/clockworkcoding/goodreads"
-	"github.com/clockworkcoding/slack"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/clockworkcoding/goodreads"
+	"github.com/clockworkcoding/slack"
 )
 
 func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
@@ -198,10 +200,33 @@ func event(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			writeError(w, http.StatusInternalServerError, err.Error())
 		}
-		fmt.Println(link.Event.Links[0].URL)
+		generateGoodreadsLinks(link)
 	}
 }
 
+func generateGoodreadsLinks(link eventLinkShared) {
+
+	fmt.Println(link.Event.Links[0].URL)
+	_, token, _, err := getSlackAuth(link.TeamID)
+	if err != nil {
+		log.Output(0, err.Error())
+		return
+	}
+
+	api := slack.New(token)
+	params := slack.UnfurlParameters{
+		Timestamp: link.Event.MessageTs,
+		Unfurls: []slack.Unfurl{
+			slack.Unfurl{
+				UnfurlURL: link.Event.Links[0].URL,
+				Attachment: slack.Attachment{
+					Text: "Hey, that's a goodreads link!",
+				},
+			},
+		},
+	}
+	api.Unfurl(link.Event.Channel, params)
+}
 func wrongBookButton(w http.ResponseWriter, action action, token string) {
 
 	var values wrongBookButtonValues

@@ -4,18 +4,17 @@
 	"GodepVersion": "v79",
 	"Deps": [
 		{
+			"ImportPath": "github.com/DDRBoxman/go-amazon-product-api",
+			"Rev": "3e88f3c8fd4f6707887e8eba206146fda2afc506"
+		},
+		{
 			"ImportPath": "github.com/clockworkcoding/goodreads",
-			"Rev": "830618df1a5488592fcbd14bc9b8fb9da197d030"
+			"Rev": "b8cc212a57b86ebc56a9f72387859840e70486f5"
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-178-g81052aa",
-			"Rev": "81052aa28328cba4beefac4d9dee188a6119ac3c"
-		},
-		{
-			"ImportPath": "github.com/dghubble/oauth1",
-			"Comment": "v0.4.0-14-g3c7784d",
-			"Rev": "3c7784d12fed88888d612324ea6897f7dc30723e"
+			"Comment": "v0.0.1-178-g82834f3",
+			"Rev": "82834f324f2e401af6e6db99ea85d186a9c29abb"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
@@ -26,6 +25,10 @@
 			"ImportPath": "github.com/lib/pq/oid",
 			"Comment": "go1.0-cutoff-166-g2704adc",
 			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
+		},
+		{
+			"ImportPath": "github.com/mrjones/oauth",
+			"Rev": "3f67d9c274355678b2f9844b08d643e2f9213340"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
@@ -42,10 +45,6 @@
 		{
 			"ImportPath": "golang.org/x/oauth2/internal",
 			"Rev": "7fdf09982454086d5570c7db3e11f360194830ca"
-		},
-		{
-			"ImportPath": "github.com/mrjones/oauth",
-			"Rev": "3f67d9c274355678b2f9844b08d643e2f9213340"
 		}
 	]
 }
