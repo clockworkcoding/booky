@@ -13,8 +13,8 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-178-g82834f3",
-			"Rev": "82834f324f2e401af6e6db99ea85d186a9c29abb"
+			"Comment": "v0.0.1-178-g13521be",
+			"Rev": "13521be51af46472a11633fc4f3d0dd9da5dcf31"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",

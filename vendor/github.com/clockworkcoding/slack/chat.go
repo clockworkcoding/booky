@@ -3,9 +3,7 @@ package slack
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/url"
-	"reflect"
 	"strings"
 )
 
@@ -84,13 +82,6 @@ func NewPostMessageParameters() PostMessageParameters {
 		IconEmoji:   DEFAULT_MESSAGE_ICON_EMOJI,
 		Markdown:    DEFAULT_MESSAGE_MARKDOWN,
 		EscapeText:  DEFAULT_MESSAGE_ESCAPE_TEXT,
-	}
-}
-
-func (b UnfurlParameters) PrintFields() {
-	val := reflect.ValueOf(b)
-	for i := 0; i < val.Type().NumField(); i++ {
-		fmt.Println(val.Type().Field(i).Tag.Get("json"))
 	}
 }
 
@@ -234,7 +225,7 @@ func (api *Client) UpdateMessageWithAttachments(channel string, params UpdateMes
 }
 
 // Unfurl unfurls links posted in channels
-func (api *Client) Unfurl(channel string, params UnfurlParameters) (string, error) {
+func (api *Client) Unfurl(channel string, params UnfurlParameters) error {
 	values := url.Values{
 		"token":   {api.config.token},
 		"channel": {channel},
@@ -251,25 +242,20 @@ func (api *Client) Unfurl(channel string, params UnfurlParameters) (string, erro
 		str := strings.Replace(string(buf), "Attachment", unfurl.UnfurlURL, 1)
 
 		exportUnfurls[i] = json.RawMessage(str)
-		fmt.Printf("exportunfurl: %v\n", exportUnfurls[i])
 	}
 
 	if len(params.Unfurls) > 1 {
 		unfurls, err := json.Marshal(exportUnfurls)
 		if err != nil {
-			fmt.Printf("Error!: %s", err.Error())
-			return "", err
+			return err
 		}
-		fmt.Printf("Many unfurls %s\n", string(unfurls))
 		values.Set("unfurls", string(unfurls))
 	} else {
 		values.Set("unfurls", string(exportUnfurls[0]))
 	}
-	response, err := chatRequest("chat.unfurl", values, api.debug)
+	_, err := chatRequest("chat.unfurl", values, api.debug)
 	if err != nil {
-		fmt.Printf("Something went wrong: %s\n", err.Error())
-		return "", err
+		return err
 	}
-	fmt.Printf("Response: %v\n", response.Ok)
-	return "ok", nil
+	return nil
 }
