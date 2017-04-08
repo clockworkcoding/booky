@@ -102,6 +102,10 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(""))
+	if queryText == "?" {
+		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", token)
+		return
+	}
 	go simpleResponse(responseURL, "Looking up your book", token)
 
 	values := wrongBookButtonValues{
