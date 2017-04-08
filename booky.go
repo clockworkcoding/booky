@@ -189,8 +189,9 @@ type Configuration struct {
 	Db struct {
 		URI string `json:"URI"`
 	} `json:"db"`
-	URL      string `json:"URL"`
-	BitlyKey string `json:"BitlyKey"`
+	URL         string `json:"URL"`
+	BitlyKey    string `json:"BitlyKey"`
+	RedirectURL string `json:"RedirectURL"`
 }
 
 func main() {
@@ -214,12 +215,16 @@ func routing() {
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
-	mux.Handle("/", http.HandlerFunc(home))
+	mux.Handle("/", http.HandlerFunc(redirect))
 	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 	if err != nil {
 		log.Fatal("ListenAndServe error: ", err)
 	}
 
+}
+
+func redirect(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, config.RedirectURL+r.URL.Path, http.StatusTemporaryRedirect)
 }
 
 func init() {
@@ -237,6 +242,7 @@ func readConfig() Configuration {
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")
 		configuration.BitlyKey = os.Getenv("BITLY_KEY")
+		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)
