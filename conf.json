@@ -10,5 +10,6 @@
   "db" : {
     "URI" : "{your key here}"
   },
-  "URL" : "{your url here}"
+  "URL" : "{your url here}",
+  "bitlyKey" : "f7b893b1c20cb3c4907fbcc66ad0489db52fe313"
 }

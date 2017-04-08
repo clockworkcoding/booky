@@ -185,7 +185,8 @@ type Configuration struct {
 	Db struct {
 		URI string `json:"URI"`
 	} `json:"db"`
-	URL string `json:"URL"`
+	URL      string `json:"URL"`
+	BitlyKey string `json:"BitlyKey"`
 }
 
 func main() {
@@ -231,6 +232,7 @@ func readConfig() Configuration {
 		configuration.Db.URI = os.Getenv("DATABASE_URL")
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")
+		configuration.BitlyKey = os.Getenv("BITLY_KEY")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)
