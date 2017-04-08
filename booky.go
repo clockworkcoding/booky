@@ -37,13 +37,13 @@ func writeError(w http.ResponseWriter, status int, err string) {
 
 func responseError(responseURL, message, token string) {
 	log.Output(1, fmt.Sprintf("Err: %s", message))
-	simpleResponse(responseURL, message, token)
+	simpleResponse(responseURL, message, false, token)
 }
 
-func simpleResponse(responseURL, message, token string) {
+func simpleResponse(responseURL, message string, replace bool, token string) {
 	params := slack.NewResponseMessageParameters()
 	params.ResponseType = "ephemeral"
-	params.ReplaceOriginal = false
+	params.ReplaceOriginal = replace
 	params.Text = message
 
 	api := slack.New(token)
@@ -79,7 +79,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(""))
-	go simpleResponse(action.ResponseURL, "", token)
+	go simpleResponse(action.ResponseURL, "", false, token)
 
 	switch action.CallbackID {
 	case "wrongbook":
@@ -103,10 +103,10 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Write([]byte(""))
 	if queryText == "?" {
-		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", token)
+		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", true, token)
 		return
 	}
-	go simpleResponse(responseURL, "Looking up your book", token)
+	go simpleResponse(responseURL, "Looking up your book", true, token)
 
 	values := wrongBookButtonValues{
 		Index:       0,
@@ -138,7 +138,6 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 }
 
 func checkTextForBook(message eventMessage) {
-	fmt.Printf("Message Text: %v", message.Event.Text)
 	tokenized := strings.Split(message.Event.Text, "_")
 	if len(tokenized) < 2 {
 		return

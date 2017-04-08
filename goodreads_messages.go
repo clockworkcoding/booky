@@ -20,33 +20,29 @@ func goodreadsButton(w http.ResponseWriter, action action, token string) {
 	auth, err := getGoodreadsAuth(goodreadsAuth{slackUserID: action.User.ID, teamID: action.Team.ID})
 	if err != nil {
 		if err.Error() == "User not found" {
-			goodreadsAuthMessage(w, action, token, "You have to connect Booky to your Goodreads account to do that")
+			goodreadsAuthMessage(action, token, "You have to connect Booky to your Goodreads account to do that")
 			return
 		}
 		writeError(w, http.StatusInternalServerError, err.Error())
 	}
 	switch action.Actions[0].Name {
 	case "selectedShelf":
-		goodreadsAddToShelf(w, action, token, values, auth)
+		go goodreadsAddToShelf(action, token, values, auth)
 	case "addToShelf":
-		goodreadsShowShelves(w, action, token, values, auth)
+		go goodreadsShowShelves(action, token, values, auth)
 	}
 
 }
 
-func goodreadsAddToShelf(w http.ResponseWriter, action action, token string, values goodreadsButtonValues, auth goodreadsAuth) {
+func goodreadsAddToShelf(action action, token string, values goodreadsButtonValues, auth goodreadsAuth) {
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
 	err := c.AddBookToShelf(values.bookID, values.shelfName)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
-	shelf, err := c.ReviewList(auth.goodreadsUserID, goodreads.ReviewListParameters{Shelf: values.shelfName})
-	if err != nil {
-		responseError(action.ResponseURL, err.Error(), token)
-		return
-	}
-	if title := checkIfBookAdded(shelf, values); title != "" {
+	simpleResponse(action.ResponseURL, "Adding...", true, token)
+	if title := checkIfBookAdded(auth, values, c); title != "" {
 		params := slack.NewResponseMessageParameters()
 		params.ResponseType = "ephemeral"
 		params.ReplaceOriginal = true
@@ -58,24 +54,34 @@ func goodreadsAddToShelf(w http.ResponseWriter, action action, token string, val
 			responseError(action.ResponseURL, err.Error(), token)
 		}
 	} else {
-		goodreadsAuthMessage(w, action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
+		goodreadsAuthMessage(action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
 	}
 }
 
-func checkIfBookAdded(reviews goodreads.Reviews_reviews, values goodreadsButtonValues) (title string) {
-	for _, rev := range reviews.Reviews_review {
-		if rev.Reviews_book.Reviews_id.Text == values.bookID {
-			return rev.Reviews_book.Reviews_title.Text
+//checkIfBookAdded returns the title of the book if it is found on the shelf, otherwise, an empty string
+func checkIfBookAdded(auth goodreadsAuth, values goodreadsButtonValues, c *goodreads.Client) (title string) {
+	for i := 1; ; i++ {
+		shelf, err := c.ReviewList(auth.goodreadsUserID, goodreads.ReviewListParameters{Shelf: values.shelfName, Page: i, PerPage: 50})
+		if err != nil {
+			return
+		}
+
+		for _, rev := range shelf.Reviews_review {
+			if rev.Reviews_book.Reviews_id.Text == values.bookID {
+				return rev.Reviews_book.Reviews_title.Text
+			}
+		}
+		if shelf.Attr_end == shelf.Attr_total {
+			return
 		}
 	}
-	return ""
 }
 
-func goodreadsShowShelves(w http.ResponseWriter, action action, token string, values goodreadsButtonValues, auth goodreadsAuth) {
+func goodreadsShowShelves(action action, token string, values goodreadsButtonValues, auth goodreadsAuth) {
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
 	shelves, err := c.GetUserShelves(auth.goodreadsUserID)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 
@@ -106,11 +112,11 @@ func goodreadsShowShelves(w http.ResponseWriter, action action, token string, va
 	api := slack.New(token)
 	err = api.PostResponse(action.ResponseURL, params)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 	}
 }
 
-func goodreadsAuthMessage(w http.ResponseWriter, action action, token, text string) {
+func goodreadsAuthMessage(action action, token, text string) {
 	params := slack.NewResponseMessageParameters()
 	params.ResponseType = "ephemeral"
 	params.ReplaceOriginal = false
@@ -127,7 +133,7 @@ func goodreadsAuthMessage(w http.ResponseWriter, action action, token, text stri
 	api := slack.New(token)
 	err := api.PostResponse(action.ResponseURL, params)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 	}
 }
 
