@@ -150,8 +150,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 			amazonLink = getAmazonAffiliateLink(book.Book_isbn[0].Text)
 		}
 		if amazonLink != "" {
-			goodreadsAttachment.AuthorName = "Buy it on Amazon"
-			goodreadsAttachment.AuthorLink = amazonLink
+			goodreadsAttachment.Footer = fmt.Sprintf("Buy it on Amazon: %s", shortenURl(amazonLink))
 		}
 		attachments = append(attachments, goodreadsAttachment)
 	}
@@ -225,7 +224,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	post.Attachments[0].Text = post.Attachments[1].Text
 	post.Attachments[0].Actions = post.Attachments[2].Actions
 	post.Attachments[0].CallbackID = post.Attachments[2].CallbackID
-	post.Attachments[0].Footer = fmt.Sprintf("Buy it on Amazon: %s", post.Attachments[2].AuthorLink)
+	post.Attachments[0].Footer = post.Attachments[2].Footer
 
 	api := slack.New(token)
 	params := slack.UnfurlParameters{
