@@ -29,11 +29,10 @@ var globalState state
 
 // writeError writes an error to the reply - example only
 func writeError(w http.ResponseWriter, status int, err string) {
-	fmt.Printf("Err: %s", err)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	w.Write([]byte(err))
-	log.Fatal(fmt.Sprintf("Err: %s", err))
+	log.Output(1, fmt.Sprintf("Err: %s", err))
 }
 
 func responseError(responseURL, message, token string) {
@@ -50,7 +49,7 @@ func simpleResponse(responseURL, message, token string) {
 	api := slack.New(token)
 	err := api.PostResponse(responseURL, params)
 	if err != nil {
-		log.Output(1, fmt.Sprintf("Err: %s", err.Error))
+		log.Output(0, fmt.Sprintf("Err: %s", err.Error()))
 	}
 
 }
@@ -186,7 +185,8 @@ type Configuration struct {
 	Db struct {
 		URI string `json:"URI"`
 	} `json:"db"`
-	URL string `json:"URL"`
+	URL      string `json:"URL"`
+	BitlyKey string `json:"BitlyKey"`
 }
 
 func main() {
@@ -232,6 +232,7 @@ func readConfig() Configuration {
 		configuration.Db.URI = os.Getenv("DATABASE_URL")
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")
+		configuration.BitlyKey = os.Getenv("BITLY_KEY")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

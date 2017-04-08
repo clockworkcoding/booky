@@ -56,6 +56,18 @@ type UpdateMessageParameters struct {
 	AsUser      bool         `json:"as_user"`
 }
 
+//UnfurlParmaeters contains all the parameters necessary (including the optional ones) for a ChatUnfurl() request
+type UnfurlParameters struct {
+	Timestamp        string   `json:"ts"`
+	Unfurls          []Unfurl `json:"-"`
+	UserAuthRequired bool     `json:"user_auth_required"`
+}
+
+type Unfurl struct {
+	Attachment Attachment `json:"Attachment"`
+	UnfurlURL  string     `json:"-"`
+}
+
 // NewPostMessageParameters provides an instance of PostMessageParameters with all the sane default values set
 func NewPostMessageParameters() PostMessageParameters {
 	return PostMessageParameters{
@@ -210,4 +222,40 @@ func (api *Client) UpdateMessageWithAttachments(channel string, params UpdateMes
 		return "", "", "", err
 	}
 	return response.Channel, response.Timestamp, response.Text, nil
+}
+
+// Unfurl unfurls links posted in channels
+func (api *Client) Unfurl(channel string, params UnfurlParameters) error {
+	values := url.Values{
+		"token":   {api.config.token},
+		"channel": {channel},
+		"ts":      {params.Timestamp},
+	}
+
+	if params.UserAuthRequired != false {
+		values.Set("user_auth_required ", "true")
+	}
+	exportUnfurls := make([]json.RawMessage, len(params.Unfurls))
+	for i, unfurl := range params.Unfurls {
+
+		buf, _ := json.Marshal(unfurl)
+		str := strings.Replace(string(buf), "Attachment", unfurl.UnfurlURL, 1)
+
+		exportUnfurls[i] = json.RawMessage(str)
+	}
+
+	if len(params.Unfurls) > 1 {
+		unfurls, err := json.Marshal(exportUnfurls)
+		if err != nil {
+			return err
+		}
+		values.Set("unfurls", string(unfurls))
+	} else {
+		values.Set("unfurls", string(exportUnfurls[0]))
+	}
+	_, err := chatRequest("chat.unfurl", values, api.debug)
+	if err != nil {
+		return err
+	}
+	return nil
 }
