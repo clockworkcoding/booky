@@ -85,6 +85,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	case "wrongbook":
 		wrongBookButton(w, action, token)
 	case "goodreads":
+		fmt.Println(payload)
 		goodreadsButton(w, action, token)
 	}
 
