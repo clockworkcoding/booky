@@ -3,18 +3,18 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
+	"log"
 	"strings"
 
 	"github.com/clockworkcoding/goodreads"
 	"github.com/clockworkcoding/slack"
 )
 
-func goodreadsButton(w http.ResponseWriter, action action, token string) {
+func goodreadsButton(action action, token string) {
 	var values goodreadsButtonValues
 	err := values.decodeValues(action.Actions[0].Value)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 	auth, err := getGoodreadsAuth(goodreadsAuth{slackUserID: action.User.ID, teamID: action.Team.ID})
@@ -23,7 +23,11 @@ func goodreadsButton(w http.ResponseWriter, action action, token string) {
 			goodreadsAuthMessage(action, token, "You have to connect Booky to your Goodreads account to do that")
 			return
 		}
-		writeError(w, http.StatusInternalServerError, err.Error())
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
+	if auth.goodreadsUserID == "" {
+		goodreadsAuthMessage(action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
 	}
 	switch action.Actions[0].Name {
 	case "selectedShelf":
@@ -38,7 +42,8 @@ func goodreadsAddToShelf(action action, token string, values goodreadsButtonValu
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
 	err := c.AddBookToShelf(values.bookID, values.shelfName)
 	if err != nil {
-		responseError(action.ResponseURL, err.Error(), token)
+		log.Println(err.Error())
+		goodreadsAuthMessage(action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
 		return
 	}
 	simpleResponse(action.ResponseURL, "Adding...", true, token)

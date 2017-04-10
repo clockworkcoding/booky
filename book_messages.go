@@ -238,7 +238,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	}
 	api.Unfurl(link.Event.Channel, params)
 }
-func wrongBookButton(w http.ResponseWriter, action action, token string) {
+func wrongBookButton(action action, token string) {
 
 	var values wrongBookButtonValues
 	err := values.decodeValues(action.Actions[0].Value)
@@ -277,9 +277,9 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		_, _, err = api.DeleteMessage(action.Channel.ID, timestamp)
 		if err != nil {
 			if !values.IsEphemeral {
-				writeError(w, http.StatusInternalServerError, err.Error())
+				responseError(action.ResponseURL, err.Error(), token)
 			} else {
-				w.Write([]byte("Sorry you couldn't find your book. Try searching for both the author and title together"))
+				simpleResponse(action.ResponseURL, "Sorry you couldn't find your book. Try searching for both the author and title together", true, token)
 			}
 
 		}
@@ -289,9 +289,9 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 	params, err := createBookPost(values, wrongBookButtons)
 	if err != nil {
 		if err.Error() == "no books found" {
-			w.Write([]byte("No books found, try a broader search"))
+			simpleResponse(action.ResponseURL, "No books found, try a broader search", true, token)
 		} else {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(action.ResponseURL, err.Error(), token)
 		}
 		return
 	}
@@ -302,7 +302,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 		responseParams.Attachments = params.Attachments
 
 		if action.Actions[0].Name == "right book" {
-			defer w.Write([]byte("Posting your book"))
+			simpleResponse(action.ResponseURL, "Posting your book", true, token)
 			responseParams.ReplaceOriginal = false
 			responseParams.ResponseType = "in_channel"
 		} else {
@@ -326,7 +326,7 @@ func wrongBookButton(w http.ResponseWriter, action action, token string) {
 
 		_, _, _, err = api.UpdateMessageWithAttachments(action.Channel.ID, updateParams)
 		if err != nil {
-			writeError(w, http.StatusInternalServerError, err.Error())
+			responseError(action.ResponseURL, err.Error(), token)
 			return
 		}
 	}

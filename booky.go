@@ -31,13 +31,13 @@ var globalState state
 func writeError(w http.ResponseWriter, status int, err string) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
-	w.Write([]byte(err))
+	w.Write([]byte("Something went wrong, please try again or contact Max@ClockworkCoding.com if the problem persists."))
 	log.Output(1, fmt.Sprintf("Err: %s", err))
 }
 
 func responseError(responseURL, message, token string) {
 	log.Output(1, fmt.Sprintf("Err: %s", message))
-	simpleResponse(responseURL, message, false, token)
+	simpleResponse(responseURL, "Something went wrong, please try again or contact Max@ClockworkCoding.com if the problem persists.", false, token)
 }
 
 func simpleResponse(responseURL, message string, replace bool, token string) {
@@ -83,9 +83,9 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 
 	switch action.CallbackID {
 	case "wrongbook":
-		wrongBookButton(w, action, token)
+		wrongBookButton(action, token)
 	case "goodreads":
-		goodreadsButton(w, action, token)
+		goodreadsButton(action, token)
 	}
 
 }
@@ -119,7 +119,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	params, err := createBookPost(values, true)
 	if err != nil {
 		if err.Error() == "no books found" {
-			responseError(responseURL, "No books found, try a broader search", token)
+			simpleResponse(responseURL, "No books found, try a broader search", false, token)
 		} else {
 			responseError(responseURL, err.Error(), token)
 		}
