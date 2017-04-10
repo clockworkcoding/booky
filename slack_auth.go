@@ -2,7 +2,6 @@ package main
 
 import (
 	"crypto/rand"
-	"fmt"
 	"net/http"
 
 	"golang.org/x/oauth2"
@@ -17,18 +16,18 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
-		writeError(w, 401, errStr)
+		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
 	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
 	if err != nil {
-		writeError(w, 401, err.Error())
+		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
 
-	w.Write([]byte(fmt.Sprintf("Booky has been added to %s", oAuthResponse.TeamName)))
+	http.Redirect(w, r, config.RedirectURL+"/SlackSuccess", http.StatusTemporaryRedirect)
 	if err = saveSlackAuth(oAuthResponse); err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
 
@@ -40,7 +39,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	b := make([]byte, 10)
 	_, err := rand.Read(b)
 	if err != nil {
-		writeError(w, http.StatusInternalServerError, err.Error())
+		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 	}
 
 	conf := &oauth2.Config{
