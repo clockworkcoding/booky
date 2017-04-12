@@ -11,12 +11,6 @@ import (
 )
 
 func goodreadsButton(action action, token string) {
-	var values goodreadsButtonValues
-	err := values.decodeValues(action.Actions[0].Value)
-	if err != nil {
-		responseError(action.ResponseURL, err.Error(), token)
-		return
-	}
 	auth, err := getGoodreadsAuth(goodreadsAuth{slackUserID: action.User.ID, teamID: action.Team.ID})
 	if err != nil {
 		if err.Error() == "User not found" {
@@ -31,16 +25,22 @@ func goodreadsButton(action action, token string) {
 	}
 	switch action.Actions[0].Name {
 	case "selectedShelf":
-		go goodreadsAddToShelf(action, token, values, auth)
+		go goodreadsAddToShelf(action, token, auth)
 	case "addToShelf":
-		go goodreadsShowShelves(action, token, values, auth)
+		go goodreadsShowShelves(action, token, auth)
 	}
 
 }
 
-func goodreadsAddToShelf(action action, token string, values goodreadsButtonValues, auth goodreadsAuth) {
+func goodreadsAddToShelf(action action, token string, auth goodreadsAuth) {
+	var values goodreadsButtonValues
+	err := values.decodeValues(action.Actions[0].SelectedOptions[0].Value)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
-	err := c.AddBookToShelf(values.bookID, values.shelfName)
+	err = c.AddBookToShelf(values.bookID, values.shelfName)
 	if err != nil {
 		log.Println(err.Error())
 		goodreadsAuthMessage(action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
@@ -51,7 +51,7 @@ func goodreadsAddToShelf(action action, token string, values goodreadsButtonValu
 		params := slack.NewResponseMessageParameters()
 		params.ResponseType = "ephemeral"
 		params.ReplaceOriginal = true
-		params.Text = fmt.Sprintf("Succesfully added %s to shelf %s.", title, values.shelfName)
+		params.Text = fmt.Sprintf("Succesfully added %s to shelf \"%s.\"", title, values.shelfName)
 
 		api := slack.New(token)
 		err = api.PostResponse(action.ResponseURL, params)
@@ -82,7 +82,14 @@ func checkIfBookAdded(auth goodreadsAuth, values goodreadsButtonValues, c *goodr
 	}
 }
 
-func goodreadsShowShelves(action action, token string, values goodreadsButtonValues, auth goodreadsAuth) {
+func goodreadsShowShelves(action action, token string, auth goodreadsAuth) {
+
+	var values goodreadsButtonValues
+	err := values.decodeValues(action.Actions[0].Value)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
 	shelves, err := c.GetUserShelves(auth.goodreadsUserID)
 	if err != nil {
@@ -90,29 +97,42 @@ func goodreadsShowShelves(action action, token string, values goodreadsButtonVal
 		return
 	}
 
-	var attachments []slack.Attachment
-	var shelfButtons []slack.AttachmentAction
-	for i, shelf := range shelves.Shelf_user_shelf {
-		if (i+1)%5 == 0 {
-			attachments = append(attachments, newGoodreadsButtonGroup(shelfButtons))
-			shelfButtons = []slack.AttachmentAction{}
-		}
+	commonShelves := slack.OptionGroup{Text: "Non-exclusive Shelves"}
+	exclusiveShelves := slack.OptionGroup{Text: "Exclusive Shelves"}
+	for _, shelf := range shelves.Shelf_user_shelf {
 		values.shelfID = shelf.Shelf_id.Text
 		values.shelfName = shelf.Shelf_name.Text
-		button := slack.AttachmentAction{
-			Name:  "selectedShelf",
+		option := slack.Option{
 			Text:  shelf.Shelf_name.Text,
-			Type:  "button",
 			Value: values.encodeValues(),
 		}
-		shelfButtons = append(shelfButtons, button)
+
+		if shelf.Shelf_exclusive_flag.Text == "false" {
+			commonShelves.Options = append(commonShelves.Options, option)
+		} else {
+			exclusiveShelves.Options = append(exclusiveShelves.Options, option)
+		}
 	}
 	params := slack.NewResponseMessageParameters()
 	params.ResponseType = "ephemeral"
 	params.ReplaceOriginal = false
-	params.Text = "Which shelf?"
-	params.Attachments = attachments
-	params.Attachments = append(params.Attachments, newGoodreadsButtonGroup(shelfButtons))
+	params.Attachments = []slack.Attachment{
+		slack.Attachment{
+			Text:       "Which shelf?",
+			CallbackID: "goodreads",
+			Fallback:   "Something went wrong, try again later",
+			Actions: []slack.AttachmentAction{
+				slack.AttachmentAction{
+					Type: "select",
+					Name: "selectedShelf",
+					OptionGroups: []slack.OptionGroup{
+						exclusiveShelves,
+						commonShelves,
+					},
+				},
+			},
+		},
+	}
 
 	api := slack.New(token)
 	err = api.PostResponse(action.ResponseURL, params)
