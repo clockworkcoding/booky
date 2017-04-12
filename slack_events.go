@@ -51,9 +51,12 @@ type challenge struct {
 
 type action struct {
 	Actions []struct {
-		Name  string `json:"name"`
-		Type  string `json:"type"`
-		Value string `json:"value"`
+		Name            string `json:"name"`
+		Type            string `json:"type"`
+		Value           string `json:"value"`
+		SelectedOptions []struct {
+			Value string `json:"value"`
+		} `json:"selected_options"`
 	} `json:"actions"`
 	CallbackID string `json:"callback_id"`
 	Team       struct {

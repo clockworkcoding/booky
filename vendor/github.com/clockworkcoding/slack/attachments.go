@@ -14,12 +14,30 @@ type AttachmentField struct {
 // using message buttons and otherwise not useful. A maximum of 5 actions may be
 // provided per attachment.
 type AttachmentAction struct {
-	Name    string             `json:"name"`              // Required.
-	Text    string             `json:"text"`              // Required.
-	Style   string             `json:"style,omitempty"`   // Optional. Allowed values: "default", "primary", "danger"
-	Type    string             `json:"type"`              // Required. Must be set to "button"
-	Value   string             `json:"value,omitempty"`   // Optional.
-	Confirm *ConfirmationField `json:"confirm,omitempty"` // Optional.
+	Name            string             `json:"name"`              // Required.
+	Text            string             `json:"text"`              // Required.
+	Style           string             `json:"style,omitempty"`   // Optional. Allowed values: "default", "primary", "danger"
+	Type            string             `json:"type"`              // Required. Allowed values: "button", "select"
+	Value           string             `json:"value,omitempty"`   // Optional.
+	Options         []Option           `json:"options"`           // Optional.
+	OptionGroups    []OptionGroup      `json:"option_groups"`     // Optional.
+	Confirm         *ConfirmationField `json:"confirm,omitempty"` // Optional.
+	DataSource      string             `json:"data_source"`       // Optional. Allowed values: "static", "users", "channels", "conversations", "external"
+	SelectedOptions []Option           `json:"selected_options"`  // Optional.
+	MinQueryLength  int                `json:"min_query_length"`  // Optional.
+}
+
+//Option is an item in a message menu
+type Option struct {
+	Text        string `json:"text"`
+	Value       string `json:"value"`
+	Description string `json:"description"` // Optional.
+}
+
+//OptionGroup is used to define a subset of options in a message menu
+type OptionGroup struct {
+	Text    string   `json:"text"`
+	Options []Option `json:"options"`
 }
 
 // AttachmentActionCallback is sent from Slack when a user clicks a button in an interactive message (aka AttachmentAction)
