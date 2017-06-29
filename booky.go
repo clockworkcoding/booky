@@ -211,6 +211,8 @@ func routing() {
 	mux.Handle("/auth", http.HandlerFunc(slackAuth))
 	mux.Handle("/gradd", http.HandlerFunc(addToGoodreads))
 	mux.Handle("/grauth", http.HandlerFunc(goodreadsAuthCallback))
+	mux.Handle("/odadd", http.HandlerFunc(addToOverdrive))
+	mux.Handle("/odauth", http.HandlerFunc(overdriveAuthCallback))
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
