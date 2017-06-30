@@ -139,6 +139,12 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 				Type:  "button",
 				Value: values.encodeValues(),
 			},
+			slack.AttachmentAction{
+				Name:  "checkOverdrive",
+				Text:  "check your library's digital catalog",
+				Type:  "button",
+				Value: values.encodeValues(),
+			},
 		}
 
 		goodreadsAttachment := newGoodreadsButtonGroup(buttons)
