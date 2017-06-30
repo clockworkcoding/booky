@@ -132,13 +132,15 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		values := goodreadsButtonValues{
 			bookID: book.Book_id[0].Text,
 		}
-		buttons := []slack.AttachmentAction{
+		grButtons := []slack.AttachmentAction{
 			slack.AttachmentAction{
 				Name:  "addToShelf",
 				Text:  "Add to your shelf",
 				Type:  "button",
 				Value: values.encodeValues(),
 			},
+		}
+		odButtons := []slack.AttachmentAction{
 			slack.AttachmentAction{
 				Name:  "checkOverdrive",
 				Text:  "check your library's digital catalog",
@@ -147,8 +149,9 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 			},
 		}
 
-		goodreadsAttachment := newGoodreadsButtonGroup(buttons)
-		attachments = append(attachments, goodreadsAttachment)
+		goodreadsAttachment := newGoodreadsButtonGroup(grButtons)
+		overdriveAttachment := newOverdriveButtonGroup(odButtons)
+		attachments = append(attachments, goodreadsAttachment, overdriveAttachment)
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text

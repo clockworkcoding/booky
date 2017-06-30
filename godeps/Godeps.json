@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/clockworkcoding/booky",
-	"GoVersion": "go1.8",
+	"GoVersion": "go1.7",
 	"GodepVersion": "v79",
 	"Deps": [
 		{
@@ -9,22 +9,22 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/goodreads",
-			"Rev": "0291f8a021e4deb167dc548d2e2c0ac9ef349e88"
+			"Rev": "ead7ed9b2a08f7c1c3622ceabba72890dcbbfeca"
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-178-g61b16b5",
-			"Rev": "61b16b50652f8a5ff4d771f2f214ab4eecc8238d"
+			"Comment": "v0.0.1-178-g81052aa",
+			"Rev": "81052aa28328cba4beefac4d9dee188a6119ac3c"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
-			"Comment": "go1.0-cutoff-166-g2704adc",
-			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
+			"Comment": "go1.0-cutoff-164-g472a074",
+			"Rev": "472a0745531a17dbac346e828b4c60e73ddff30c"
 		},
 		{
 			"ImportPath": "github.com/lib/pq/oid",
-			"Comment": "go1.0-cutoff-166-g2704adc",
-			"Rev": "2704adc878c21e1329f46f6e56a1c387d788ff94"
+			"Comment": "go1.0-cutoff-164-g472a074",
+			"Rev": "472a0745531a17dbac346e828b4c60e73ddff30c"
 		},
 		{
 			"ImportPath": "github.com/mrjones/oauth",
