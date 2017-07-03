@@ -182,6 +182,11 @@ type Configuration struct {
 		Key    string `json:"Key"`
 		Secret string `json:"Secret"`
 	} `json:"Goodreads"`
+	Overdrive struct {
+		ClientID string `json:"ClientID"`
+		Key      string `json:"Key"`
+		Secret   string `json:"Secret"`
+	} `json:"Overdrive"`
 	Slack struct {
 		ClientID          string `json:"ClientID"`
 		ClientSecret      string `json:"ClientSecret"`
