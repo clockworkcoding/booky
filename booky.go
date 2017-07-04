@@ -183,9 +183,8 @@ type Configuration struct {
 		Secret string `json:"Secret"`
 	} `json:"Goodreads"`
 	Overdrive struct {
-		ClientID string `json:"ClientID"`
-		Key      string `json:"Key"`
-		Secret   string `json:"Secret"`
+		Key    string `json:"Key"`
+		Secret string `json:"Secret"`
 	} `json:"Overdrive"`
 	Slack struct {
 		ClientID          string `json:"ClientID"`
@@ -246,6 +245,8 @@ func readConfig() Configuration {
 		configuration.Slack.ClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
 		configuration.Goodreads.Secret = os.Getenv("GOODREADS_SECRET")
 		configuration.Goodreads.Key = os.Getenv("GOODREADS_KEY")
+		configuration.Overdrive.Secret = os.Getenv("OVERDRIVE_SECRET")
+		configuration.Overdrive.Key = os.Getenv("OVERDRIVE_KEY")
 		configuration.Db.URI = os.Getenv("DATABASE_URL")
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")

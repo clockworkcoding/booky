@@ -1,38 +1,46 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/clockworkcoding/goverdrive"
-	"github.com/mrjones/oauth"
 
 	_ "github.com/lib/pq"
 )
 
 // auth receives the callback from Overdrive, validates and displays the user information
 func overdriveAuthCallback(w http.ResponseWriter, r *http.Request) {
-	token := r.FormValue("code")
+	code := r.FormValue("code")
 	userid := r.FormValue("state")
-	if userid == "" || token == "" {
+	log.Printf("code: %s, user: %s\n", code, userid)
+	if userid == "" || code == "" {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-	auth, err := getOverdriveAuth(overdriveAuth{token: token, slackUserID: userid})
+	auth, err := getOverdriveAuth(overdriveAuth{slackUserID: userid})
 	if err != nil {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-
-	c := goverdrive.NewClient(config.Overdrive.Key, config.Overdrive.Secret)
-	accessToken, err := c.Consumer.AuthorizeToken(&oauth.RequestToken{Secret: auth.refreshToken, Token: auth.token}, token)
+	log.Println("loaded auth from db")
+	accessToken, err := goverdrive.GetToken(config.Overdrive.Key, config.Overdrive.Secret, auth.overdriveAccountID, code, config.URL+"/odauth")
 	if err != nil {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-
-	auth.token = accessToken.Token
-	auth.refreshToken = accessToken.Secret
-
+	auth.token = accessToken.AccessToken
+	auth.refreshToken = accessToken.RefreshToken
+	auth.tokenType = accessToken.TokenType
+	auth.expiry = accessToken.Expiry
+	log.Println("retrieved accesstoken")
+	err = saveOverdriveAuth(auth)
+	if err != nil {
+		log.Println(err.Error())
+		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
+		return
+	}
+	log.Println("saved the token!")
 	// c = goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.refreshToken)
 	// grUser, err := c.QueryUser()
 	// if err != nil {
@@ -57,7 +65,7 @@ func addToOverdrive(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	url := goverdrive.BuildAuthURL(config.Overdrive.ClientID, "4425", userID, config.URL+"/odauth")
+	url := goverdrive.BuildAuthURL(config.Overdrive.Key, "4425", userID, config.URL+"/odauth")
 
 	auth := overdriveAuth{
 		slackUserID:        userID,

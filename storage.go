@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
@@ -15,23 +16,26 @@ func saveOverdriveAuth(param overdriveAuth) (err error) {
 	id serial primary key,
 	teamid varchar(200),
 	slackuserid varchar(200),
-	overdriveuserid varchar(200),
 	overdriveaccountid varchar(200),
-	token varchar(200),
-	refreshtoken varchar(200),
-	createdtime date
+	token varchar,
+	refreshtoken varchar,
+	tokenType varchar,
+	expiry timestamp,
+	createdtime timestamp
 	)`); err != nil {
 		fmt.Println("Error creating database table: " + err.Error())
 		return
 	}
 	if param.id != 0 {
-		if _, err = db.Exec(fmt.Sprintf(`UPDATE overdrive_auth
+		query := fmt.Sprintf(`UPDATE overdrive_auth
 	SET token = '%s' ,
 	refreshtoken = '%s',
-	overdriveuserid = '%s',
-	overdriveaccountid = '%s',
+	tokenType = '%s',
+	expiry = '%v',
+	overdriveaccountid = '%s'
 	where id = %v`,
-			param.token, param.refreshToken, param.overdriveUserID, param.overdriveAccountID, param.id)); err != nil {
+			param.token, param.refreshToken, param.tokenType, param.expiry.Format(time.RFC3339Nano), param.overdriveAccountID, param.id)
+		if _, err = db.Exec(query); err != nil {
 			fmt.Println("Error saving overdrive auth: " + err.Error())
 			return
 		}
@@ -40,13 +44,14 @@ func saveOverdriveAuth(param overdriveAuth) (err error) {
 		if _, err = db.Exec(fmt.Sprintf(`INSERT INTO overdrive_auth(
 		teamid ,
 		slackuserid ,
-		overdriveuserid,
 		overdriveaccountid,
 		token ,
 		refreshtoken ,
+		tokenType,
+		expiry,
 		createdtime
-		) VALUES ('%s','%s','%s','%s','%s','%s', now())`,
-			param.teamID, param.slackUserID, param.overdriveUserID, param.overdriveAccountID, param.token, param.refreshToken)); err != nil {
+		) VALUES ('%s','%s','%s','%s','%s','%s', '%v', now())`,
+			param.teamID, param.slackUserID, param.overdriveAccountID, param.token, param.refreshToken, param.tokenType, param.expiry.Format(time.RFC3339Nano))); err != nil {
 			fmt.Println("Error saving overdrive auth: " + err.Error())
 			return
 		}
@@ -160,10 +165,11 @@ type overdriveAuth struct {
 	id                 int
 	teamID             string
 	slackUserID        string
-	overdriveUserID    string
 	overdriveAccountID string
 	token              string
 	refreshToken       string
+	tokenType          string
+	expiry             time.Time
 }
 
 func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
@@ -218,7 +224,7 @@ func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
 
 func getOverdriveAuth(param overdriveAuth) (result overdriveAuth, err error) {
 	var query bytes.Buffer
-	query.WriteString("SELECT id, teamid, slackuserid, overdriveuserid, overdriveaccountid, token, refreshtoken FROM overdrive_auth WHERE 1 = 1 ")
+	query.WriteString("SELECT id, teamid, slackuserid, overdriveaccountid, token, refreshtoken, tokenType, expiry FROM overdrive_auth WHERE 1 = 1 ")
 	if param.id != 0 {
 		query.WriteString(" AND id = ")
 		query.WriteString(string(param.id))
@@ -231,11 +237,6 @@ func getOverdriveAuth(param overdriveAuth) (result overdriveAuth, err error) {
 	if param.slackUserID != "" {
 		query.WriteString(" AND slackuserid = '")
 		query.WriteString(param.slackUserID)
-		query.WriteString("'")
-	}
-	if param.overdriveUserID != "" {
-		query.WriteString(" AND overdriveuserid = '")
-		query.WriteString(param.overdriveUserID)
 		query.WriteString("'")
 	}
 	if param.overdriveAccountID != "" {
@@ -253,6 +254,11 @@ func getOverdriveAuth(param overdriveAuth) (result overdriveAuth, err error) {
 		query.WriteString(param.refreshToken)
 		query.WriteString("'")
 	}
+	if param.tokenType != "" {
+		query.WriteString(" AND tokenType = '")
+		query.WriteString(param.tokenType)
+		query.WriteString("'")
+	}
 	query.WriteString(" ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY")
 
 	rows, err := db.Query(query.String())
@@ -261,7 +267,7 @@ func getOverdriveAuth(param overdriveAuth) (result overdriveAuth, err error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		if err = rows.Scan(&result.id, &result.teamID, &result.slackUserID, &result.overdriveUserID, &result.overdriveAccountID, &result.token, &result.refreshToken); err != nil {
+		if err = rows.Scan(&result.id, &result.teamID, &result.slackUserID, &result.overdriveAccountID, &result.token, &result.refreshToken, &result.tokenType, &result.expiry); err != nil {
 			fmt.Println("Error scanning auth:" + err.Error())
 			return
 		}
