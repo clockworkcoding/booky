@@ -3,8 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strings"
 
+	"golang.org/x/oauth2"
+
+	"github.com/clockworkcoding/goverdrive"
 	"github.com/clockworkcoding/slack"
 )
 
@@ -18,9 +22,28 @@ func overdriveButton(action action, token string) {
 		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
+
 	if auth.overdriveAccountID == "" {
 		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
 	}
+	log.Printf("toke: %s ref: %s", auth.token, auth.refreshToken)
+	oauthToken := &oauth2.Token{
+		AccessToken:  auth.token,
+		RefreshToken: auth.refreshToken,
+		Expiry:       auth.expiry,
+		TokenType:    auth.tokenType,
+	}
+	c := goverdrive.NewClient(config.Overdrive.Key, config.Overdrive.Secret, "", oauthToken, true)
+	library, err := c.GetLibrary(auth.overdriveAccountID)
+	if err != nil {
+		overdriveAuthMessage(action, token, err.Error())
+		return
+	}
+	if auth.overdriveAccountID == "" {
+		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
+	}
+
+	simpleResponse(action.ResponseURL, fmt.Sprintf("Your id is %s and your checkout limit is %s \n %#v", library.Name, library.Formats[0].Name, library), false, token)
 	// switch action.Actions[0].Name {
 	// case "selectedShelf":
 	// 	go goodreadsAddToShelf(action, token, auth)

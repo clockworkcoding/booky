@@ -24,5 +24,18 @@ func NewClient(clientID, clientSecret, libraryAccountId string, token *oauth2.To
 		},
 	}
 
-	return &Client{client: conf.Client(oauth2.NoContext, token)}
+	return &Client{client: conf.Client(oauth2.NoContext, token), test: test}
+}
+
+func (c *Client) getDiscoveryAPI() string {
+	if c.test {
+		return intDiscoveryApiRoot
+	}
+	return discoveryApiRoot
+}
+func (c *Client) getCirculationAPI() string {
+	if c.test {
+		return intCirculationApiRoot
+	}
+	return circulationApiRoot
 }

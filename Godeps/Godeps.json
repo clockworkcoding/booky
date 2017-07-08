@@ -13,7 +13,7 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/goverdrive",
-			"Rev": "847ba25c935b7e34832a82e00e6f241d1a05006a"
+			"Rev": "4ebbc1de38870a6e686fade8bcabc4c6c72c372d"
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
