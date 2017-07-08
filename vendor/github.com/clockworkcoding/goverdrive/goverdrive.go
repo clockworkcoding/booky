@@ -1,7 +1,6 @@
 package goverdrive
 
 import (
-	"context"
 	"log"
 	"net/url"
 
@@ -12,8 +11,12 @@ const (
 	//AuthURL Overdrive's authentication endpoint
 	AuthURL = "https://oauth.overdrive.com/auth"
 	//TokenURL Overdrive's token endpoint
-	TokenURL = "https://oauth.overdrive.com/token"
-	//authURI = "https://oauth.overdrive.com/auth?client_id=%s&redirect_uri=%s&scope=accountId:%s&response_type=code&state=%s"
+	TokenURL              = "https://oauth.overdrive.com/token"
+	apiRoot               = ""
+	intDiscoveryApiRoot   = "https://integration.api.overdrive.com"
+	discoveryApiRoot      = "https://api.overdrive.com"
+	intCirculationApiRoot = "https://integration-patron.api.overdrive.com"
+	circulationApiRoot    = "https://patron.api.overdrive.com"
 )
 
 //BuildAuthURL generates the interpolated auth URI, probably won't be used
@@ -32,7 +35,7 @@ func BuildAuthURL(clientID, accountID, state, redirectURI string) string {
 }
 
 func GetToken(clientID, clientSecret, libraryAccountId, code, redirectURI string) (token *oauth2.Token, err error) {
-	ctx := context.Background()
+	ctx := oauth2.NoContext
 	conf := &oauth2.Config{
 		ClientID:     clientID,
 		ClientSecret: clientSecret,

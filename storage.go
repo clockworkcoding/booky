@@ -34,7 +34,8 @@ func saveOverdriveAuth(param overdriveAuth) (err error) {
 	expiry = '%v',
 	overdriveaccountid = '%s'
 	where id = %v`,
-			param.token, param.refreshToken, param.tokenType, param.expiry.Format(time.RFC3339Nano), param.overdriveAccountID, param.id)
+
+			encrypt([]byte(config.Keys.Key1), param.token), encrypt([]byte(config.Keys.Key2), param.refreshToken), param.tokenType, param.expiry.Format(time.RFC3339Nano), param.overdriveAccountID, param.id)
 		if _, err = db.Exec(query); err != nil {
 			fmt.Println("Error saving overdrive auth: " + err.Error())
 			return
@@ -270,6 +271,12 @@ func getOverdriveAuth(param overdriveAuth) (result overdriveAuth, err error) {
 		if err = rows.Scan(&result.id, &result.teamID, &result.slackUserID, &result.overdriveAccountID, &result.token, &result.refreshToken, &result.tokenType, &result.expiry); err != nil {
 			fmt.Println("Error scanning auth:" + err.Error())
 			return
+		}
+		if result.token != "" {
+			result.token = decrypt([]byte(config.Keys.Key1), result.token)
+		}
+		if result.refreshToken != "" {
+			result.refreshToken = decrypt([]byte(config.Keys.Key2), result.refreshToken)
 		}
 		return
 	}

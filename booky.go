@@ -194,6 +194,10 @@ type Configuration struct {
 	Db struct {
 		URI string `json:"URI"`
 	} `json:"db"`
+	Keys struct {
+		Key1 string `json:"Key1"`
+		Key2 string `json:"Key2"`
+	} `json:"Keys"`
 	URL         string `json:"URL"`
 	BitlyKey    string `json:"BitlyKey"`
 	RedirectURL string `json:"RedirectURL"`
@@ -252,6 +256,8 @@ func readConfig() Configuration {
 		configuration.URL = os.Getenv("URL")
 		configuration.BitlyKey = os.Getenv("BITLY_KEY")
 		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
+		configuration.Keys.Key1 = os.Getenv("KEY_1")
+		configuration.Keys.Key2 = os.Getenv("KEY_2")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

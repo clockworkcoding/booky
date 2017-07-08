@@ -41,18 +41,7 @@ func overdriveAuthCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	log.Println("saved the token!")
-	// c = goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.refreshToken)
-	// grUser, err := c.QueryUser()
-	// if err != nil {
-	// 	http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
-	// 	return
-	// }
-	// auth.overdriveUserID = grUser.Attr_id
-	// if err = saveOverdriveAuth(auth); err != nil {
-	// 	http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
-	// 	return
-	// }
-	// http.Redirect(w, r, config.RedirectURL+"/OverdriveSuccess", http.StatusTemporaryRedirect)
+	http.Redirect(w, r, config.RedirectURL+"/OverdriveSuccess", http.StatusTemporaryRedirect)
 
 }
 
