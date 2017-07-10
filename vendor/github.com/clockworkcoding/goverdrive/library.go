@@ -1,7 +1,7 @@
 package goverdrive
 
 import (
-	"encoding/xml"
+	"encoding/json"
 	"errors"
 	"log"
 )
@@ -15,9 +15,10 @@ func (c *Client) GetLibrary(accountID string) (library Library, err error) {
 	if resp.StatusCode != 200 {
 		return library, errors.New(resp.Status)
 	}
+	log.Println("Library call:" + resp.Status)
 	defer resp.Body.Close()
 
-	if err := xml.NewDecoder(resp.Body).Decode(&library); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&library); err != nil {
 		log.Println(err)
 	}
 	return

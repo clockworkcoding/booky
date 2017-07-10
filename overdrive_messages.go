@@ -43,7 +43,7 @@ func overdriveButton(action action, token string) {
 		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
 	}
 
-	simpleResponse(action.ResponseURL, fmt.Sprintf("Your id is %s and your checkout limit is %s \n %#v", library.Name, library.Formats[0].Name, library), false, token)
+	simpleResponse(action.ResponseURL, fmt.Sprintf("Your id is %s and your collectiontoken is %s \n %#v", library.Name, library.CollectionToken, library), false, token)
 	// switch action.Actions[0].Name {
 	// case "selectedShelf":
 	// 	go goodreadsAddToShelf(action, token, auth)

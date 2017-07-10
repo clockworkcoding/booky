@@ -13,9 +13,9 @@ const (
 	//TokenURL Overdrive's token endpoint
 	TokenURL              = "https://oauth.overdrive.com/token"
 	apiRoot               = ""
-	intDiscoveryApiRoot   = "https://integration.api.overdrive.com"
+	intDiscoveryApiRoot   = "http://integration.api.overdrive.com"
 	discoveryApiRoot      = "https://api.overdrive.com"
-	intCirculationApiRoot = "https://integration-patron.api.overdrive.com"
+	intCirculationApiRoot = "http://integration-patron.api.overdrive.com"
 	circulationApiRoot    = "https://patron.api.overdrive.com"
 )
 
