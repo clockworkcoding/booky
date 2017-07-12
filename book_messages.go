@@ -140,12 +140,15 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 				Value: values.encodeValues(),
 			},
 		}
+		odValues := overdriveSearchButtonValues{
+			query: book.Book_title_without_series.Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text,
+		}
 		odButtons := []slack.AttachmentAction{
 			slack.AttachmentAction{
 				Name:  "checkOverdrive",
 				Text:  "check your library's digital catalog",
 				Type:  "button",
-				Value: values.encodeValues(),
+				Value: odValues.encodeValues(),
 			},
 		}
 

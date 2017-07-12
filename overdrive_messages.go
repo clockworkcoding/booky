@@ -82,23 +82,23 @@ func newOverdriveButtonGroup(buttons []slack.AttachmentAction) slack.Attachment 
 	}
 }
 
-type overdriveButtonValues struct {
-	bookID    string
-	shelfID   string
-	shelfName string
+type overdriveSearchButtonValues struct {
+	query        string
+	index        string
+	collectionID string
 }
 
-func (values *overdriveButtonValues) encodeOverdriveValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v", values.bookID, values.shelfID, values.shelfName)
+func (values *overdriveSearchButtonValues) encodeValues() string {
+	return fmt.Sprintf("%v|+|%v|+|%v", values.query, values.index, values.collectionID)
 }
-func (values *overdriveButtonValues) decodeOverdriveValues(valueString string) (err error) {
+func (values *overdriveSearchButtonValues) decodeValues(valueString string) (err error) {
 	valueStrings := strings.Split(valueString, "|+|")
 	if len(valueStrings) < 3 {
 		err = errors.New("not enough values")
 		return
 	}
-	values.bookID = valueStrings[0]
-	values.shelfID = valueStrings[1]
-	values.shelfName = valueStrings[2]
+	values.query = valueStrings[0]
+	values.index = valueStrings[1]
+	values.collectionID = valueStrings[2]
 	return
 }
