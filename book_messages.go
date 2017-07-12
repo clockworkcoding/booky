@@ -132,29 +132,30 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		values := goodreadsButtonValues{
 			bookID: book.Book_id[0].Text,
 		}
-		grButtons := []slack.AttachmentAction{
-			slack.AttachmentAction{
-				Name:  "addToShelf",
-				Text:  "Add to your shelf",
-				Type:  "button",
-				Value: values.encodeValues(),
-			},
-		}
 		odValues := overdriveSearchButtonValues{
 			query: book.Book_title_without_series.Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text,
 		}
-		odButtons := []slack.AttachmentAction{
-			slack.AttachmentAction{
-				Name:  "checkOverdrive",
-				Text:  "check your library's digital catalog",
-				Type:  "button",
-				Value: odValues.encodeValues(),
+		buttons := slack.Attachment{
+			Actions: []slack.AttachmentAction{
+
+				slack.AttachmentAction{
+					Name:  "addToShelf",
+					Text:  "Add to your shelf",
+					Type:  "button",
+					Value: values.encodeValues(),
+				},
+				slack.AttachmentAction{
+					Name:  "checkOverdrive",
+					Text:  "check your library's digital catalog",
+					Type:  "button",
+					Value: odValues.encodeValues(),
+				},
 			},
+			CallbackID: "bookaction",
+			Fallback:   "Something went wrong, try again later",
 		}
 
-		goodreadsAttachment := newGoodreadsButtonGroup(grButtons)
-		overdriveAttachment := newOverdriveButtonGroup(odButtons)
-		attachments = append(attachments, goodreadsAttachment, overdriveAttachment)
+		attachments = append(attachments, buttons)
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text

@@ -88,6 +88,13 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		goodreadsButton(action, token)
 	case "overdrive":
 		overdriveButton(action, token)
+	case "bookaction":
+		switch action.Actions[0].Name {
+		case "checkOverdrive":
+			overdriveButton(action, token)
+		case "addToShelf":
+			goodreadsButton(action, token)
+		}
 	}
 
 }
