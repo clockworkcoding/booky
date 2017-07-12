@@ -133,20 +133,22 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 			bookID: book.Book_id[0].Text,
 		}
 		odValues := overdriveSearchButtonValues{
-			query: book.Book_title_without_series.Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text,
+			query: book.Book_title[0].Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text,
 		}
+		odValues.query = strings.Replace(odValues.query, ".", " ", -1)
+		log.Printf("Book: %#v", book)
 		buttons := slack.Attachment{
 			Actions: []slack.AttachmentAction{
 
 				slack.AttachmentAction{
 					Name:  "addToShelf",
-					Text:  "Add to your shelf",
+					Text:  "Add to Goodreads",
 					Type:  "button",
 					Value: values.encodeValues(),
 				},
 				slack.AttachmentAction{
 					Name:  "checkOverdrive",
-					Text:  "check your library's digital catalog",
+					Text:  "Check Your Library",
 					Type:  "button",
 					Value: odValues.encodeValues(),
 				},

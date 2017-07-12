@@ -30,7 +30,7 @@ func BuildAuthURL(clientID, accountID, state, redirectURI string) string {
 	parameters.Add("scope", "accountId:"+accountID)
 	parameters.Add("state", state)
 	URL.RawQuery = parameters.Encode()
-	log.Println(URL.String())
+
 	return URL.String()
 }
 

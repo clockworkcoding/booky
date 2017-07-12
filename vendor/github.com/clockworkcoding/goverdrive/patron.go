@@ -1,7 +1,7 @@
 package goverdrive
 
 import (
-	"encoding/xml"
+	"encoding/json"
 	"errors"
 	"log"
 )
@@ -17,7 +17,7 @@ func (c *Client) GetPatron() (patron Patron, err error) {
 	}
 	defer resp.Body.Close()
 
-	if err := xml.NewDecoder(resp.Body).Decode(&patron); err != nil {
+	if err := json.NewDecoder(resp.Body).Decode(&patron); err != nil {
 		log.Println(err)
 	}
 	return

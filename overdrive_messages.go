@@ -42,8 +42,17 @@ func overdriveButton(action action, token string) {
 	if auth.overdriveAccountID == "" {
 		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
 	}
+	var odValues overdriveSearchButtonValues
+	odValues.decodeValues(action.Actions[0].Value)
+	searchParams := goverdrive.NewSearchPamters()
+	searchParams.Query = odValues.query
+	result, err := c.GetSearch(library.Links.Products.Href, searchParams)
+	if err != nil {
+		overdriveAuthMessage(action, token, err.Error())
+		return
+	}
 
-	simpleResponse(action.ResponseURL, fmt.Sprintf("Your id is %s and your collectiontoken is %s \n %#v", library.Name, library.CollectionToken, library), false, token)
+	simpleResponse(action.ResponseURL, fmt.Sprintf("%#v", result), false, token)
 	// switch action.Actions[0].Name {
 	// case "selectedShelf":
 	// 	go goodreadsAddToShelf(action, token, auth)

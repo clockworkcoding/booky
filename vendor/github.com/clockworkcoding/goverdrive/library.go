@@ -15,7 +15,7 @@ func (c *Client) GetLibrary(accountID string) (library Library, err error) {
 	if resp.StatusCode != 200 {
 		return library, errors.New(resp.Status)
 	}
-	log.Println("Library call:" + resp.Status)
+
 	defer resp.Body.Close()
 
 	if err := json.NewDecoder(resp.Body).Decode(&library); err != nil {
