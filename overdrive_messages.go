@@ -1,9 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"strings"
 
 	"golang.org/x/oauth2"
@@ -26,7 +28,7 @@ func overdriveButton(action action, token string) {
 	if auth.overdriveAccountID == "" {
 		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
 	}
-	log.Printf("toke: %s ref: %s", auth.token, auth.refreshToken)
+
 	oauthToken := &oauth2.Token{
 		AccessToken:  auth.token,
 		RefreshToken: auth.refreshToken,
@@ -44,21 +46,83 @@ func overdriveButton(action action, token string) {
 	}
 	var odValues overdriveSearchButtonValues
 	odValues.decodeValues(action.Actions[0].Value)
-	searchParams := goverdrive.NewSearchPamters()
+	searchParams := goverdrive.NewSearchParamters()
 	searchParams.Query = odValues.query
 	result, err := c.GetSearch(library.Links.Products.Href, searchParams)
 	if err != nil {
 		overdriveAuthMessage(action, token, err.Error())
 		return
 	}
+	if result.TotalItems == 0 {
+		simpleResponse(action.ResponseURL, "I couldn't find this title in your library's Overdrive catalog", false, token)
+	}
+	attachments := []slack.Attachment{}
+	for i, book := range result.Products {
+		if i >= 5 {
+			break
+		}
+		var formatBuffer bytes.Buffer
+		for j, format := range book.Formats {
+			if j > 0 {
+				formatBuffer.WriteString(" | ")
+			}
+			formatBuffer.WriteString(format.Name)
+		}
+		availability, err := c.GetAvailability(book.Links.Availability.Href)
+		if err != nil {
+			simpleResponse(action.ResponseURL, "Something went wrong, please try again", false, token)
+		}
+		log.Println(availability)
+		actions := []slack.AttachmentAction{}
+		if availability.CopiesAvailable > 0 {
+			actions = append(actions, slack.AttachmentAction{
+				Name:  "checkout",
+				Text:  "Checkout",
+				Type:  "button",
+				Value: "?",
+			})
+		} else if availability.CopiesOwned > 0 {
+			actions = append(actions, slack.AttachmentAction{
+				Name:  "placehold",
+				Text:  "Place Hold",
+				Type:  "button",
+				Value: "?",
+			})
+		}
+		attachments = append(attachments, slack.Attachment{
+			Title:      fmt.Sprintf("%s by %s", book.Title, book.PrimaryCreator.Name),
+			TitleLink:  book.Links.Self.Href,
+			AuthorName: formatBuffer.String(),
+			ThumbURL:   book.Images.Thumbnail.Href,
+			Fields: []slack.AttachmentField{
+				slack.AttachmentField{
+					Title: "Available Copies",
+					Short: true,
+					Value: fmt.Sprintf("%d/%d", availability.CopiesAvailable, availability.CopiesOwned),
+				},
+				slack.AttachmentField{
+					Title: "Holds",
+					Value: strconv.Itoa(availability.NumberOfHolds),
+					Short: true,
+				},
+			},
+			Actions:    actions,
+			CallbackID: "overdrive",
+			Fallback:   "Something went wrong, try again later",
+		})
+	}
+	api := slack.New(token)
+	params := slack.NewResponseMessageParameters()
+	params.ResponseType = "ephemeral"
+	params.ReplaceOriginal = false
+	params.Text = fmt.Sprintf("Here are the results from %s", library.Name)
+	params.AsUser = false
+	params.Attachments = attachments
+	err = api.PostResponse(action.ResponseURL, params)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
 
-	simpleResponse(action.ResponseURL, fmt.Sprintf("%#v", result), false, token)
-	// switch action.Actions[0].Name {
-	// case "selectedShelf":
-	// 	go goodreadsAddToShelf(action, token, auth)
-	// case "addToShelf":
-	// 	go goodreadsShowShelves(action, token, auth)
-	// }
+	}
 
 }
 

@@ -25,7 +25,7 @@ type SearchParameters struct {
 	SortAscending       bool
 }
 
-func NewSearchPamters() SearchParameters {
+func NewSearchParamters() SearchParameters {
 	return SearchParameters{
 		SortAscending: true,
 	}

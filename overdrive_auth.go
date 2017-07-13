@@ -13,7 +13,7 @@ import (
 func overdriveAuthCallback(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	userid := r.FormValue("state")
-	log.Printf("code: %s, user: %s\n", code, userid)
+
 	if userid == "" || code == "" {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
@@ -23,7 +23,7 @@ func overdriveAuthCallback(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-	log.Println("loaded auth from db")
+
 	accessToken, err := goverdrive.GetToken(config.Overdrive.Key, config.Overdrive.Secret, auth.overdriveAccountID, code, config.URL+"/odauth")
 	if err != nil {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
@@ -33,14 +33,14 @@ func overdriveAuthCallback(w http.ResponseWriter, r *http.Request) {
 	auth.refreshToken = accessToken.RefreshToken
 	auth.tokenType = accessToken.TokenType
 	auth.expiry = accessToken.Expiry
-	log.Println("retrieved accesstoken")
+
 	err = saveOverdriveAuth(auth)
 	if err != nil {
 		log.Println(err.Error())
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-	log.Println("saved the token!")
+
 	http.Redirect(w, r, config.RedirectURL+"/OverdriveSuccess", http.StatusTemporaryRedirect)
 
 }
