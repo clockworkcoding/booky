@@ -6,10 +6,11 @@ import (
 	"errors"
 	"io/ioutil"
 	"log"
+	"strings"
 )
 
 func (c *Client) GetAvailability(availabilityURL string) (result Availability, err error) {
-
+	availabilityURL = strings.Replace(availabilityURL, "/v1/", "/v2/", 1)
 	resp, err := c.client.Get(availabilityURL)
 	if err != nil {
 		return

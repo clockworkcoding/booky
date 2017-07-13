@@ -132,10 +132,8 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		values := goodreadsButtonValues{
 			bookID: book.Book_id[0].Text,
 		}
-		odValues := overdriveSearchButtonValues{
-			query: book.Book_title[0].Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text,
-		}
-		odValues.query = strings.Replace(odValues.query, ".", " ", -1)
+		odValue := book.Book_title[0].Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text
+		odValue = strings.Replace(odValue, ".", " ", -1)
 		log.Printf("Book: %#v", book)
 		buttons := slack.Attachment{
 			Actions: []slack.AttachmentAction{
@@ -150,7 +148,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 					Name:  "checkOverdrive",
 					Text:  "Check Your Library",
 					Type:  "button",
-					Value: odValues.encodeValues(),
+					Value: odValue,
 				},
 			},
 			CallbackID: "bookaction",

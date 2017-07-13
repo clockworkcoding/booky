@@ -2,16 +2,12 @@ package main
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
-	"log"
-	"strconv"
-	"strings"
-
-	"golang.org/x/oauth2"
-
 	"github.com/clockworkcoding/goverdrive"
 	"github.com/clockworkcoding/slack"
+	"golang.org/x/oauth2"
+	"log"
+	"strconv"
 )
 
 func overdriveButton(action action, token string) {
@@ -36,18 +32,27 @@ func overdriveButton(action action, token string) {
 		TokenType:    auth.tokenType,
 	}
 	c := goverdrive.NewClient(config.Overdrive.Key, config.Overdrive.Secret, "", oauthToken, true)
-	library, err := c.GetLibrary(auth.overdriveAccountID)
+
+	switch action.Actions[0].Name {
+	case "checkOverdrive":
+		checkOverdrive(action, token, c, auth.overdriveAccountID)
+	case "checkout":
+		overdriveCheckout(action, token, c)
+	}
+
+}
+
+func checkOverdrive(action action, token string, c *goverdrive.Client, accountId string) {
+
+	library, err := c.GetLibrary(accountId)
 	if err != nil {
 		overdriveAuthMessage(action, token, err.Error())
 		return
 	}
-	if auth.overdriveAccountID == "" {
-		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
-	}
-	var odValues overdriveSearchButtonValues
-	odValues.decodeValues(action.Actions[0].Value)
+
 	searchParams := goverdrive.NewSearchParamters()
-	searchParams.Query = odValues.query
+	searchParams.Query = action.Actions[0].Value
+	searchParams.Limit = 20
 	result, err := c.GetSearch(library.Links.Products.Href, searchParams)
 	if err != nil {
 		overdriveAuthMessage(action, token, err.Error())
@@ -57,17 +62,16 @@ func overdriveButton(action action, token string) {
 		simpleResponse(action.ResponseURL, "I couldn't find this title in your library's Overdrive catalog", false, token)
 	}
 	attachments := []slack.Attachment{}
-	for i, book := range result.Products {
-		if i >= 5 {
-			break
-		}
+	for _, book := range result.Products {
+
 		var formatBuffer bytes.Buffer
-		for j, format := range book.Formats {
-			if j > 0 {
+		for i, format := range book.Formats {
+			if i > 0 {
 				formatBuffer.WriteString(" | ")
 			}
 			formatBuffer.WriteString(format.Name)
 		}
+
 		availability, err := c.GetAvailability(book.Links.Availability.Href)
 		if err != nil {
 			simpleResponse(action.ResponseURL, "Something went wrong, please try again", false, token)
@@ -79,14 +83,14 @@ func overdriveButton(action action, token string) {
 				Name:  "checkout",
 				Text:  "Checkout",
 				Type:  "button",
-				Value: "?",
+				Value: availability.ReserveID,
 			})
 		} else if availability.CopiesOwned > 0 {
 			actions = append(actions, slack.AttachmentAction{
-				Name:  "placehold",
+				Name:  "placeHold",
 				Text:  "Place Hold",
 				Type:  "button",
-				Value: "?",
+				Value: availability.ReserveID,
 			})
 		}
 		attachments = append(attachments, slack.Attachment{
@@ -126,6 +130,18 @@ func overdriveButton(action action, token string) {
 
 }
 
+func overdriveCheckout(action action, token string, c *goverdrive.Client) {
+	log.Println("reserveId: " + action.Actions[0].Value)
+	result, err := c.CheckoutTitle(action.Actions[0].Value, "")
+	if err != nil {
+		log.Println(err.Error())
+		overdriveAuthMessage(action, token, "Something went wrong, make sure your Library's Overdrive catalog is connected to Booky")
+		return
+	}
+
+	simpleResponse(action.ResponseURL, fmt.Sprintf("The title has been checked out until %s", result.Expires), true, token)
+}
+
 func overdriveAuthMessage(action action, token, text string) {
 	params := slack.NewResponseMessageParameters()
 	params.ResponseType = "ephemeral"
@@ -153,25 +169,4 @@ func newOverdriveButtonGroup(buttons []slack.AttachmentAction) slack.Attachment 
 		Fallback:   "Something went wrong, try again later",
 		Actions:    buttons,
 	}
-}
-
-type overdriveSearchButtonValues struct {
-	query        string
-	index        string
-	collectionID string
-}
-
-func (values *overdriveSearchButtonValues) encodeValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v", values.query, values.index, values.collectionID)
-}
-func (values *overdriveSearchButtonValues) decodeValues(valueString string) (err error) {
-	valueStrings := strings.Split(valueString, "|+|")
-	if len(valueStrings) < 3 {
-		err = errors.New("not enough values")
-		return
-	}
-	values.query = valueStrings[0]
-	values.index = valueStrings[1]
-	values.collectionID = valueStrings[2]
-	return
 }
