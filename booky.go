@@ -233,6 +233,7 @@ func routing() {
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
+	mux.Handle("/gaction", http.HandlerFunc(lookUpHandler))
 	mux.Handle("/", http.HandlerFunc(redirect))
 	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 	if err != nil {
