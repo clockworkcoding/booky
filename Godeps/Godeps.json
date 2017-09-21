@@ -8,6 +8,10 @@
 			"Rev": "3e88f3c8fd4f6707887e8eba206146fda2afc506"
 		},
 		{
+			"ImportPath": "github.com/campoy/apiai",
+			"Rev": "17266d8ce708166c1eaf0f2cfbf05644e8742172"
+		},
+		{
 			"ImportPath": "github.com/clockworkcoding/goodreads",
 			"Rev": "8c4fe2412445756fa3427b75694b621f3d058439"
 		},
