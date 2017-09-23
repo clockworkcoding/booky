@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"time"
 
+	"github.com/antonlindstrom/pgstore"
 	"github.com/campoy/apiai"
 	"github.com/clockworkcoding/goodreads"
 )
@@ -22,6 +24,25 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Entered look up handler", req)
+
+	store, err := pgstore.NewPGStore(config.Db.URI, []byte(config.Keys.Key2))
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	defer store.Close()
+
+	// Run a background goroutine to clean up expired sessions from the database.
+	defer store.StopCleanup(store.Cleanup(time.Minute * 5))
+
+	// Get a session.
+	session, err := store.Get(r, "whatever")
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+	log.Println("id: ", req.ID, " session id: ", req.SessionID, "data", req.OriginalRequest.Data)
+	log.Println("foo: ", session.Values["foo"])
+	// Add a value.
+	session.Values["foo"] = "barbie"
 
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	var bookId string
@@ -59,7 +80,7 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		}
 		if author.Book_role.Text != "" {
 			responseBuffer.WriteString(author.Book_role.Text)
-			responseBuffer.WriteString(" by ")
+			responseBuffer.WriteString(" ")
 		}
 		responseBuffer.WriteString(author.Book_name.Text)
 	}
@@ -70,7 +91,7 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	responseBuffer.WriteString(" and ")
 	responseBuffer.WriteString(book.Book_text_reviews_count.Text)
 	responseBuffer.WriteString(" reviews. The description is ")
-	responseBuffer.WriteString(book.Book_description.Text)
+	responseBuffer.WriteString(removeMarkup(book.Book_description.Text))
 	res := apiai.Response{
 		Speech: responseBuffer.String(),
 	}
@@ -79,5 +100,11 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("could not encode response: " + err.Error())
 		return
 	}
+
+	session.Options.MaxAge = 600
+	if err = session.Save(r, w); err != nil {
+		log.Fatalf("Error saving session: %v", err)
+	}
+
 	fmt.Fprintf(w, "%s", b)
 }
