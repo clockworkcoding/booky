@@ -7,11 +7,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"time"
+	"net/url"
+	"os"
+	"strings"
 
-	"github.com/antonlindstrom/pgstore"
 	"github.com/campoy/apiai"
 	"github.com/clockworkcoding/goodreads"
+	"github.com/go-redis/redis"
 )
 
 func lookUpHandler(w http.ResponseWriter, r *http.Request) {
@@ -24,25 +26,6 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Println("Entered look up handler", req)
-
-	store, err := pgstore.NewPGStore(config.Db.URI, []byte(config.Keys.Key2))
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	defer store.Close()
-
-	// Run a background goroutine to clean up expired sessions from the database.
-	defer store.StopCleanup(store.Cleanup(time.Minute * 5))
-
-	// Get a session.
-	session, err := store.Get(r, "whatever")
-	if err != nil {
-		log.Fatalf(err.Error())
-	}
-	log.Println("id: ", req.ID, " session id: ", req.SessionID, "data", req.OriginalRequest.Data)
-	log.Println("foo: ", session.Values["foo"])
-	// Add a value.
-	session.Values["foo"] = "barbie"
 
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	var bookId string
@@ -101,10 +84,42 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	session.Options.MaxAge = 600
-	if err = session.Save(r, w); err != nil {
-		log.Fatalf("Error saving session: %v", err)
+	var resolvedURL = os.Getenv("REDIS_URL")
+	var password = ""
+	if !strings.Contains(resolvedURL, "localhost") {
+		parsedURL, _ := url.Parse(resolvedURL)
+		password, _ = parsedURL.User.Password()
+		resolvedURL = parsedURL.Host
 	}
 
+	client := redis.NewClient(&redis.Options{
+		Addr:     resolvedURL,
+		Password: password, // no password set
+		DB:       0,        // use default DB
+	})
+
+	pong, err := client.Ping().Result()
+	fmt.Println(pong, err)
+	// Output: PONG <nil>
+
+	err = client.Set("key", "value", 0).Err()
+	if err != nil {
+		fmt.Println(err)
+	}
+
+	val, err := client.Get("key").Result()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("key", val)
+
+	val2, err := client.Get("key2").Result()
+	if err == redis.Nil {
+		fmt.Println("key2 does not exists")
+	} else if err != nil {
+		panic(err)
+	} else {
+		fmt.Println("key2", val2)
+	}
 	fmt.Fprintf(w, "%s", b)
 }

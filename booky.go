@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/clockworkcoding/slack"
-	"github.com/gorilla/context"
 	_ "github.com/lib/pq"
 )
 
@@ -236,7 +235,7 @@ func routing() {
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
 	mux.Handle("/gaction", http.HandlerFunc(lookUpHandler))
 	mux.Handle("/", http.HandlerFunc(redirect))
-	err := http.ListenAndServe(":"+os.Getenv("PORT"), context.ClearHandler(mux))
+	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 	if err != nil {
 		log.Fatal("ListenAndServe error: ", err)
 	}

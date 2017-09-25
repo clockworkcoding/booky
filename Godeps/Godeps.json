@@ -8,10 +8,6 @@
 			"Rev": "3e88f3c8fd4f6707887e8eba206146fda2afc506"
 		},
 		{
-			"ImportPath": "github.com/antonlindstrom/pgstore",
-			"Rev": "a407030ba6d0efd9a1aad3d0cfc18a9b13d2f2e7"
-		},
-		{
 			"ImportPath": "github.com/campoy/apiai",
 			"Rev": "17266d8ce708166c1eaf0f2cfbf05644e8742172"
 		},
@@ -29,19 +25,39 @@
 			"Rev": "1880c605754fbf01c9164f2ed28b47d41d17485a"
 		},
 		{
+			"ImportPath": "github.com/go-redis/redis",
+			"Comment": "v6.7.0-2-g83513b5",
+			"Rev": "83513b5140f1f76d3cf081c7c80b30784f2aa083"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal",
+			"Comment": "v6.7.0-2-g83513b5",
+			"Rev": "83513b5140f1f76d3cf081c7c80b30784f2aa083"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/consistenthash",
+			"Comment": "v6.7.0-2-g83513b5",
+			"Rev": "83513b5140f1f76d3cf081c7c80b30784f2aa083"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/hashtag",
+			"Comment": "v6.7.0-2-g83513b5",
+			"Rev": "83513b5140f1f76d3cf081c7c80b30784f2aa083"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/pool",
+			"Comment": "v6.7.0-2-g83513b5",
+			"Rev": "83513b5140f1f76d3cf081c7c80b30784f2aa083"
+		},
+		{
+			"ImportPath": "github.com/go-redis/redis/internal/proto",
+			"Comment": "v6.7.0-2-g83513b5",
+			"Rev": "83513b5140f1f76d3cf081c7c80b30784f2aa083"
+		},
+		{
 			"ImportPath": "github.com/gorilla/context",
 			"Comment": "v1.1-7-g08b5f42",
 			"Rev": "08b5f424b9271eedf6f9f0ce86cb9396ed337a42"
-		},
-		{
-			"ImportPath": "github.com/gorilla/securecookie",
-			"Comment": "v1.1-6-ge59506c",
-			"Rev": "e59506cc896acb7f7bf732d4fdf5e25f7ccd8983"
-		},
-		{
-			"ImportPath": "github.com/gorilla/sessions",
-			"Comment": "v1.1-7-gb61c93c",
-			"Rev": "b61c93cb7f67533c8bfbb5ea450efc07e5833c5e"
 		},
 		{
 			"ImportPath": "github.com/lib/pq",
@@ -56,11 +72,6 @@
 		{
 			"ImportPath": "github.com/mrjones/oauth",
 			"Rev": "3f67d9c274355678b2f9844b08d643e2f9213340"
-		},
-		{
-			"ImportPath": "github.com/pkg/errors",
-			"Comment": "v0.8.0-6-g2b3a18b",
-			"Rev": "2b3a18b5f0fb6b4f9190549597d3f962c02bc5eb"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
