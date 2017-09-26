@@ -38,17 +38,16 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not decode request: "+err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	if req.Result.Action == "lookup.lookup-more" {
+		descriptionHandler(w, r, req)
+		return
+	}
 	client, err := getRedisClient()
 	if err != nil {
 		fmt.Println("Redis connection", err)
 	}
 	defer client.Close()
-
-	val, err := client.Get(req.SessionID).Result()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("key", val)
 
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	var bookID string
@@ -118,5 +117,24 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		actionError(w, err)
 		return
 	}
+}
+
+func descriptionHandler(w http.ResponseWriter, r *http.Request, req apiai.Request) {
+	client, err := getRedisClient()
+	if err != nil {
+		fmt.Println("Redis connection", err)
+	}
+	defer client.Close()
+
+	val, err := client.Get(req.SessionID).Result()
+	if err != nil {
+		fmt.Println(err)
+	}
+	var book goodreads.Book_book
+	err = json.Unmarshal([]byte(val), &book)
+	if err != nil {
+		fmt.Println(err)
+	}
+	writeSpeech(w, removeMarkup(book.Book_description.Text))
 
 }
