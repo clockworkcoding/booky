@@ -11,8 +11,8 @@ import (
 
 const bitlyAPIRoot = "https://api-ssl.bitly.com"
 
-//shortenURl returns the original url if there's an error
-func shortenURl(longURL string) (shortURL string) {
+//shortenURL returns the original url if there's an error
+func shortenURL(longURL string) (shortURL string) {
 	if config.BitlyKey == "" || config.BitlyKey == "{your key here}" {
 		return longURL
 	}

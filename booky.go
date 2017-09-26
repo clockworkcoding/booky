@@ -184,6 +184,7 @@ func checkTextForBook(message eventMessage) {
 	}
 }
 
+//Configuration booky's config struct
 type Configuration struct {
 	Goodreads struct {
 		Key    string `json:"Key"`
@@ -205,7 +206,7 @@ type Configuration struct {
 		Key1 string `json:"Key1"`
 		Key2 string `json:"Key2"`
 	} `json:"Keys"`
-	RedisURL    string `json: "RedisURL`
+	RedisURL    string `json:"RedisURL"`
 	URL         string `json:"URL"`
 	BitlyKey    string `json:"BitlyKey"`
 	RedirectURL string `json:"RedirectURL"`

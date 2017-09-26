@@ -16,7 +16,7 @@ import (
 
 func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
-	if values.bookId == "" {
+	if values.bookID == "" {
 		results, err := gr.GetSearch(values.Query)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -30,9 +30,9 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		if values.Index >= len(results.Search_work) {
 			values.Index = 0
 		}
-		values.bookId = results.Search_work[values.Index].Search_best_book.Search_id.Text
+		values.bookID = results.Search_work[values.Index].Search_best_book.Search_id.Text
 	}
-	book, err := gr.GetBook(values.bookId)
+	book, err := gr.GetBook(values.bookID)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -85,7 +85,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		},
 	}
 	if wrongBookButtons {
-		values.Index += 1
+		values.Index++
 		nextValues := values.encodeValues()
 		values.Index -= 2
 		prevValues := values.encodeValues()
@@ -212,7 +212,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	if !strings.Contains(link.Event.Links[0].URL, "book/show/") {
 		return
 	}
-	values := wrongBookButtonValues{bookId: strings.Split(link.Event.Links[0].URL, "book/show/")[1]}
+	values := wrongBookButtonValues{bookID: strings.Split(link.Event.Links[0].URL, "book/show/")[1]}
 	_, token, _, err := getSlackAuth(link.TeamID)
 	if err != nil {
 		log.Output(0, err.Error())
@@ -341,7 +341,7 @@ type wrongBookButtonValues struct {
 	Query       string `json:"query"`
 	Index       int    `json:"index"`
 	IsEphemeral bool   `json:"is_ephemeral"`
-	bookId      string
+	bookID      string
 }
 
 func (values *wrongBookButtonValues) encodeValues() string {

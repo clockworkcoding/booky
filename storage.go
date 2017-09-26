@@ -156,7 +156,7 @@ func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
 	return id, token, channelid, errors.New("Team not found")
 }
 
-func getRedisClinet() (client *redis.Client, err error) {
+func getRedisClient() (client *redis.Client, err error) {
 
 	var resolvedURL = config.RedisURL
 	var password = ""
@@ -172,9 +172,9 @@ func getRedisClinet() (client *redis.Client, err error) {
 		DB:       0,        // use default DB
 	})
 
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
-	// Output: PONG <nil>
+	_, err = client.Ping().Result()
+
+	return
 }
 
 type goodreadsAuth struct {

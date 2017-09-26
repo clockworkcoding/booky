@@ -3,19 +3,31 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"log"
 	"net/http"
-	"net/url"
-	"os"
-	"strings"
 	"time"
 
 	"github.com/campoy/apiai"
 	"github.com/clockworkcoding/goodreads"
-	"github.com/go-redis/redis"
 )
+
+func actionError(w http.ResponseWriter, err error) {
+	fmt.Println(err)
+	writeSpeech(w, "Something went wrong, please try again")
+}
+
+func writeSpeech(w http.ResponseWriter, speech string) {
+
+	res := apiai.Response{
+		Speech: speech,
+	}
+	b, err := json.MarshalIndent(res, "", "  ")
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	fmt.Fprintf(w, "%s", b)
+}
 
 func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 
@@ -25,24 +37,11 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "could not decode request: "+err.Error(), http.StatusBadRequest)
 		return
 	}
-
-	var resolvedURL = os.Getenv("REDIS_URL")
-	var password = ""
-	if !strings.Contains(resolvedURL, "localhost") {
-		parsedURL, _ := url.Parse(resolvedURL)
-		password, _ = parsedURL.User.Password()
-		resolvedURL = parsedURL.Host
+	client, err := getRedisClient()
+	if err != nil {
+		fmt.Println("Redis connection", err)
 	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     resolvedURL,
-		Password: password, // no password set
-		DB:       0,        // use default DB
-	})
-
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
-	// Output: PONG <nil>
+	defer client.Close()
 
 	val, err := client.Get(req.SessionID).Result()
 	if err != nil {
@@ -51,27 +50,28 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("key", val)
 
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
-	var bookId string
+	var bookID string
 
 	if req.Param("title") != "" {
 		results, err := gr.GetSearch(req.Param("title") + " " + req.Param("author-last") + " " + req.Param("author-given"))
 		if err != nil {
-			fmt.Println(err.Error())
+			actionError(w, err)
 			return
 		}
 		if len(results.Search_work) == 0 {
-			err = errors.New("no books found")
+			writeSpeech(w, "Sorry, I couldn't find that book")
 			return
 		}
 
-		bookId = results.Search_work[0].Search_best_book.Search_id.Text
+		bookID = results.Search_work[0].Search_best_book.Search_id.Text
 	} else {
-		fmt.Fprintf(w, "%s", "I'm sorry, what book?")
+		writeSpeech(w, "I'm sorry, what book?")
+		return
 	}
 
-	book, err := gr.GetBook(bookId)
+	book, err := gr.GetBook(bookID)
 	if err != nil {
-		fmt.Println(err.Error())
+		actionError(w, err)
 		return
 	}
 
@@ -98,27 +98,18 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	responseBuffer.WriteString(book.Book_text_reviews_count.Text)
 	responseBuffer.WriteString(" reviews. The description is ")
 	responseBuffer.WriteString(removeMarkup(book.Book_description.Text))
-	res := apiai.Response{
-		Speech: responseBuffer.String(),
-	}
-	b, err := json.MarshalIndent(res, "", "  ")
+
+	writeSpeech(w, responseBuffer.String())
+
 	if err != nil {
-		log.Println("could not encode response: " + err.Error())
+		actionError(w, err)
 		return
 	}
 	var serialBook, _ = json.Marshal(book)
 	err = client.Set(req.SessionID, serialBook, time.Minute*10).Err()
 	if err != nil {
-		fmt.Println(err)
+		actionError(w, err)
+		return
 	}
 
-	val2, err := client.Get("key2").Result()
-	if err == redis.Nil {
-		fmt.Println("key2 does not exists")
-	} else if err != nil {
-		panic(err)
-	} else {
-		fmt.Println("key2", val2)
-	}
-	fmt.Fprintf(w, "%s", b)
 }

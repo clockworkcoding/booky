@@ -3,11 +3,12 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"log"
+	"strconv"
+
 	"github.com/clockworkcoding/goverdrive"
 	"github.com/clockworkcoding/slack"
 	"golang.org/x/oauth2"
-	"log"
-	"strconv"
 )
 
 func overdriveButton(action action, token string) {
@@ -42,9 +43,9 @@ func overdriveButton(action action, token string) {
 
 }
 
-func checkOverdrive(action action, token string, c *goverdrive.Client, accountId string) {
+func checkOverdrive(action action, token string, c *goverdrive.Client, accountID string) {
 
-	library, err := c.GetLibrary(accountId)
+	library, err := c.GetLibrary(accountID)
 	if err != nil {
 		overdriveAuthMessage(action, token, err.Error())
 		return
