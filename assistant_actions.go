@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/campoy/apiai"
@@ -75,6 +76,11 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	shortDescription := removeMarkup(book.Book_description.Text)
+	if len(shortDescription) > 350 {
+		shortDescription = shortDescription[0:strings.LastIndex(shortDescription[0:350], " ")]
+	}
+
 	var responseBuffer bytes.Buffer
 	responseBuffer.WriteString(book.Book_title[0].Text)
 
@@ -96,8 +102,9 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	responseBuffer.WriteString(book.Book_average_rating[0].Text)
 	responseBuffer.WriteString(" and ")
 	responseBuffer.WriteString(book.Book_text_reviews_count.Text)
-	responseBuffer.WriteString(" reviews. The description is ")
-	responseBuffer.WriteString(removeMarkup(book.Book_description.Text))
+	responseBuffer.WriteString(" reviews. ")
+	responseBuffer.WriteString(shortDescription)
+	responseBuffer.WriteString("... Would you like to hear the full description, a review, or add this book to a shelf?")
 
 	writeSpeech(w, responseBuffer.String())
 
