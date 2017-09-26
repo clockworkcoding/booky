@@ -205,6 +205,7 @@ type Configuration struct {
 		Key1 string `json:"Key1"`
 		Key2 string `json:"Key2"`
 	} `json:"Keys"`
+	RedisURL    string `json: "RedisURL`
 	URL         string `json:"URL"`
 	BitlyKey    string `json:"BitlyKey"`
 	RedirectURL string `json:"RedirectURL"`
@@ -266,6 +267,7 @@ func readConfig() Configuration {
 		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
 		configuration.Keys.Key1 = os.Getenv("KEY_1")
 		configuration.Keys.Key2 = os.Getenv("KEY_2")
+		configuration.RedisURL = os.Getenv("REDIS_URL")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

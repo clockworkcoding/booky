@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/campoy/apiai"
 	"github.com/clockworkcoding/goodreads"
@@ -25,7 +26,29 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	log.Println("Entered look up handler", req)
+	var resolvedURL = os.Getenv("REDIS_URL")
+	var password = ""
+	if !strings.Contains(resolvedURL, "localhost") {
+		parsedURL, _ := url.Parse(resolvedURL)
+		password, _ = parsedURL.User.Password()
+		resolvedURL = parsedURL.Host
+	}
+
+	client := redis.NewClient(&redis.Options{
+		Addr:     resolvedURL,
+		Password: password, // no password set
+		DB:       0,        // use default DB
+	})
+
+	pong, err := client.Ping().Result()
+	fmt.Println(pong, err)
+	// Output: PONG <nil>
+
+	val, err := client.Get(req.SessionID).Result()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("key", val)
 
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	var bookId string
@@ -83,35 +106,11 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 		log.Println("could not encode response: " + err.Error())
 		return
 	}
-
-	var resolvedURL = os.Getenv("REDIS_URL")
-	var password = ""
-	if !strings.Contains(resolvedURL, "localhost") {
-		parsedURL, _ := url.Parse(resolvedURL)
-		password, _ = parsedURL.User.Password()
-		resolvedURL = parsedURL.Host
-	}
-
-	client := redis.NewClient(&redis.Options{
-		Addr:     resolvedURL,
-		Password: password, // no password set
-		DB:       0,        // use default DB
-	})
-
-	pong, err := client.Ping().Result()
-	fmt.Println(pong, err)
-	// Output: PONG <nil>
-
-	err = client.Set("key", "value", 0).Err()
+	var serialBook, _ = json.Marshal(book)
+	err = client.Set(req.SessionID, serialBook, time.Minute*10).Err()
 	if err != nil {
 		fmt.Println(err)
 	}
-
-	val, err := client.Get("key").Result()
-	if err != nil {
-		fmt.Println(err)
-	}
-	fmt.Println("key", val)
 
 	val2, err := client.Get("key2").Result()
 	if err == redis.Nil {

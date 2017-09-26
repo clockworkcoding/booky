@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 	"time"
 
 	"github.com/clockworkcoding/slack"
+	"github.com/go-redis/redis"
 	_ "github.com/lib/pq"
 )
 
@@ -151,6 +154,27 @@ func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
 	}
 
 	return id, token, channelid, errors.New("Team not found")
+}
+
+func getRedisClinet() (client *redis.Client, err error) {
+
+	var resolvedURL = config.RedisURL
+	var password = ""
+	if !strings.Contains(resolvedURL, "localhost") {
+		parsedURL, _ := url.Parse(resolvedURL)
+		password, _ = parsedURL.User.Password()
+		resolvedURL = parsedURL.Host
+	}
+
+	client = redis.NewClient(&redis.Options{
+		Addr:     resolvedURL,
+		Password: password, // no password set
+		DB:       0,        // use default DB
+	})
+
+	pong, err := client.Ping().Result()
+	fmt.Println(pong, err)
+	// Output: PONG <nil>
 }
 
 type goodreadsAuth struct {
