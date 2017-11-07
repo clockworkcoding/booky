@@ -77,7 +77,7 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 
 	shortDescription := removeMarkup(book.Book_description.Text)
 	if len(shortDescription) > 350 {
-		shortDescription = shortDescription[0:strings.LastIndex(shortDescription[0:350], " ")]
+		shortDescription = shortDescription[0:strings.LastIndex(shortDescription[0:200], " ")]
 	}
 
 	var responseBuffer bytes.Buffer
@@ -103,7 +103,7 @@ func lookUpHandler(w http.ResponseWriter, r *http.Request) {
 	responseBuffer.WriteString(book.Book_text_reviews_count.Text)
 	responseBuffer.WriteString(" reviews. ")
 	responseBuffer.WriteString(shortDescription)
-	responseBuffer.WriteString("... Would you like to hear the full description, a review, or add this book to a shelf?")
+	responseBuffer.WriteString("\n Would you like to hear the full description, a review, or add this book to a shelf?")
 
 	writeSpeech(w, responseBuffer.String())
 
