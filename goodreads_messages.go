@@ -118,9 +118,10 @@ func goodreadsShowShelves(action action, token string, auth goodreadsAuth) {
 	params.ReplaceOriginal = false
 	params.Attachments = []slack.Attachment{
 		slack.Attachment{
-			Text:       "Which shelf?",
+			Text:       "Which shelf should *" + values.bookName + "* be added to?",
 			CallbackID: "goodreads",
 			Fallback:   "Something went wrong, try again later",
+			MarkdownIn: []string{"text", "fields"},
 			Actions: []slack.AttachmentAction{
 				slack.AttachmentAction{
 					Type: "select",
@@ -174,10 +175,11 @@ type goodreadsButtonValues struct {
 	bookID    string
 	shelfID   string
 	shelfName string
+	bookName  string
 }
 
 func (values *goodreadsButtonValues) encodeValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v", values.bookID, values.shelfID, values.shelfName)
+	return fmt.Sprintf("%v|+|%v|+|%v|+|%v", values.bookID, values.shelfID, values.shelfName, values.bookName)
 }
 func (values *goodreadsButtonValues) decodeValues(valueString string) (err error) {
 	valueStrings := strings.Split(valueString, "|+|")
@@ -188,5 +190,12 @@ func (values *goodreadsButtonValues) decodeValues(valueString string) (err error
 	values.bookID = valueStrings[0]
 	values.shelfID = valueStrings[1]
 	values.shelfName = valueStrings[2]
+	if len(valueStrings) >= 4 {
+		values.bookName = valueStrings[3]
+	}
+	if len(valueStrings) < 3 {
+		err = errors.New("not enough values")
+		return
+	}
 	return
 }

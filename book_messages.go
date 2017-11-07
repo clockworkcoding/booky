@@ -130,7 +130,8 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		attachments = append(attachments, wrongBookButtons)
 	} else {
 		values := goodreadsButtonValues{
-			bookID: book.Book_id[0].Text,
+			bookID:   book.Book_id[0].Text,
+			bookName: book.Book_title[0].Text,
 		}
 		odValue := book.Book_title[0].Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text
 		odValue = strings.Replace(odValue, ".", " ", -1)
