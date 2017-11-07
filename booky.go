@@ -86,6 +86,15 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		wrongBookButton(action, token)
 	case "goodreads":
 		goodreadsButton(action, token)
+	case "overdrive":
+		overdriveButton(action, token)
+	case "bookaction":
+		switch action.Actions[0].Name {
+		case "checkOverdrive":
+			overdriveButton(action, token)
+		case "addToShelf":
+			goodreadsButton(action, token)
+		}
 	}
 
 }
@@ -175,11 +184,16 @@ func checkTextForBook(message eventMessage) {
 	}
 }
 
+//Configuration booky's config struct
 type Configuration struct {
 	Goodreads struct {
 		Key    string `json:"Key"`
 		Secret string `json:"Secret"`
 	} `json:"Goodreads"`
+	Overdrive struct {
+		Key    string `json:"Key"`
+		Secret string `json:"Secret"`
+	} `json:"Overdrive"`
 	Slack struct {
 		ClientID          string `json:"ClientID"`
 		ClientSecret      string `json:"ClientSecret"`
@@ -188,6 +202,11 @@ type Configuration struct {
 	Db struct {
 		URI string `json:"URI"`
 	} `json:"db"`
+	Keys struct {
+		Key1 string `json:"Key1"`
+		Key2 string `json:"Key2"`
+	} `json:"Keys"`
+	RedisURL    string `json:"RedisURL"`
 	URL         string `json:"URL"`
 	BitlyKey    string `json:"BitlyKey"`
 	RedirectURL string `json:"RedirectURL"`
@@ -211,9 +230,12 @@ func routing() {
 	mux.Handle("/auth", http.HandlerFunc(slackAuth))
 	mux.Handle("/gradd", http.HandlerFunc(addToGoodreads))
 	mux.Handle("/grauth", http.HandlerFunc(goodreadsAuthCallback))
+	mux.Handle("/odadd", http.HandlerFunc(addToOverdrive))
+	mux.Handle("/odauth", http.HandlerFunc(overdriveAuthCallback))
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
+	mux.Handle("/gaction", http.HandlerFunc(lookUpHandler))
 	mux.Handle("/", http.HandlerFunc(redirect))
 	err := http.ListenAndServe(":"+os.Getenv("PORT"), mux)
 	if err != nil {
@@ -237,11 +259,16 @@ func readConfig() Configuration {
 		configuration.Slack.ClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
 		configuration.Goodreads.Secret = os.Getenv("GOODREADS_SECRET")
 		configuration.Goodreads.Key = os.Getenv("GOODREADS_KEY")
+		configuration.Overdrive.Secret = os.Getenv("OVERDRIVE_SECRET")
+		configuration.Overdrive.Key = os.Getenv("OVERDRIVE_KEY")
 		configuration.Db.URI = os.Getenv("DATABASE_URL")
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")
 		configuration.BitlyKey = os.Getenv("BITLY_KEY")
 		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
+		configuration.Keys.Key1 = os.Getenv("KEY_1")
+		configuration.Keys.Key2 = os.Getenv("KEY_2")
+		configuration.RedisURL = os.Getenv("REDIS_URL")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

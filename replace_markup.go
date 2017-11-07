@@ -3,25 +3,55 @@ package main
 import "strings"
 
 func replaceMarkup(s string) string {
-	s = strings.Replace(s, "<b>", "*", -1)
-	s = strings.Replace(s, "</b>", "*", -1)
-	s = strings.Replace(s, "<em>", "_", -1)
-	s = strings.Replace(s, "</em>", "_", -1)
-	s = strings.Replace(s, "<i>", "_", -1)
-	s = strings.Replace(s, "</i>", "_", -1)
-	s = strings.Replace(s, "<u>", "_", -1)
-	s = strings.Replace(s, "</u>", "_", -1)
-	s = strings.Replace(s, "<br>", "\n", -1)
-	s = strings.Replace(s, "<s>", "~", -1)
-	s = strings.Replace(s, "</s>", "~", -1)
-	s = strings.Replace(s, "<pre>", "`", -1)
-	s = strings.Replace(s, "</pre>", "`", -1)
-	s = strings.Replace(s, "<blockquote>", "```", -1)
-	s = strings.Replace(s, "</blockquote>", "```", -1)
-	s = strings.Replace(s, "<p>", "\n", -1)
-	s = strings.Replace(s, "</p>", "\n", -1)
-	s = strings.Replace(s, "</br>", "\n", -1)
-	s = strings.Replace(s, "<br/>", "\n", -1)
-	s = strings.Replace(s, "<br />", "\n", -1)
-	return s
+	replacer := strings.NewReplacer(
+		"<b>", "*",
+		"</b>", "*",
+		"<strong>", "*",
+		"</strong>", "*",
+		"<em>", "_",
+		"</em>", "_",
+		"<i>", "_",
+		"</i>", "_",
+		"<u>", "_",
+		"</u>", "_",
+		"<br>", "\n",
+		"<s>", "~",
+		"</s>", "~",
+		"<pre>", "`",
+		"</pre>", "`",
+		"<blockquote>", "```",
+		"</blockquote>", "```",
+		"<p>", "\n",
+		"</p>", "\n",
+		"</br>", "\n",
+		"<br/>", "\n",
+		"<br />", "\n")
+	return replacer.Replace(s)
+}
+
+func removeMarkup(s string) string {
+	replacer := strings.NewReplacer(
+		"<b>", " ",
+		"</b>", " ",
+		"<strong>", " ",
+		"</strong>", " ",
+		"<em>", " ",
+		"</em>", " ",
+		"<i>", " ",
+		"</i>", " ",
+		"<u>", " ",
+		"</u>", " ",
+		"<br>", " ",
+		"<s>", " ",
+		"</s>", " ",
+		"<pre>", " ",
+		"</pre>", " ",
+		"<blockquote>", "\n",
+		"</blockquote>", "\n",
+		"<p>", "\n",
+		"</p>", "\n",
+		"</br>", "\n",
+		"<br/>", "\n",
+		"<br />", "\n")
+	return replacer.Replace(s)
 }

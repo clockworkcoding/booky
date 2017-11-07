@@ -4,10 +4,64 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
+	"time"
 
 	"github.com/clockworkcoding/slack"
+	"github.com/go-redis/redis"
 	_ "github.com/lib/pq"
 )
+
+func saveOverdriveAuth(param overdriveAuth) (err error) {
+
+	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS overdrive_auth (
+	id serial primary key,
+	teamid varchar(200),
+	slackuserid varchar(200),
+	overdriveaccountid varchar(200),
+	token varchar,
+	refreshtoken varchar,
+	tokenType varchar,
+	expiry timestamp,
+	createdtime timestamp
+	)`); err != nil {
+		fmt.Println("Error creating database table: " + err.Error())
+		return
+	}
+	if param.id != 0 {
+		query := fmt.Sprintf(`UPDATE overdrive_auth
+	SET token = '%s' ,
+	refreshtoken = '%s',
+	tokenType = '%s',
+	expiry = '%v',
+	overdriveaccountid = '%s'
+	where id = %v`,
+
+			encrypt([]byte(config.Keys.Key1), param.token), encrypt([]byte(config.Keys.Key2), param.refreshToken), param.tokenType, param.expiry.Format(time.RFC3339Nano), param.overdriveAccountID, param.id)
+		if _, err = db.Exec(query); err != nil {
+			fmt.Println("Error saving overdrive auth: " + err.Error())
+			return
+		}
+
+	} else {
+		if _, err = db.Exec(fmt.Sprintf(`INSERT INTO overdrive_auth(
+		teamid ,
+		slackuserid ,
+		overdriveaccountid,
+		token ,
+		refreshtoken ,
+		tokenType,
+		expiry,
+		createdtime
+		) VALUES ('%s','%s','%s','%s','%s','%s', '%v', now())`,
+			param.teamID, param.slackUserID, param.overdriveAccountID, param.token, param.refreshToken, param.tokenType, param.expiry.Format(time.RFC3339Nano))); err != nil {
+			fmt.Println("Error saving overdrive auth: " + err.Error())
+			return
+		}
+	}
+	return
+}
 
 func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 
@@ -102,6 +156,27 @@ func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
 	return id, token, channelid, errors.New("Team not found")
 }
 
+func getRedisClient() (client *redis.Client, err error) {
+
+	var resolvedURL = config.RedisURL
+	var password = ""
+	if !strings.Contains(resolvedURL, "localhost") {
+		parsedURL, _ := url.Parse(resolvedURL)
+		password, _ = parsedURL.User.Password()
+		resolvedURL = parsedURL.Host
+	}
+
+	client = redis.NewClient(&redis.Options{
+		Addr:     resolvedURL,
+		Password: password, // no password set
+		DB:       0,        // use default DB
+	})
+
+	_, err = client.Ping().Result()
+
+	return
+}
+
 type goodreadsAuth struct {
 	id              int
 	teamID          string
@@ -109,6 +184,17 @@ type goodreadsAuth struct {
 	goodreadsUserID string
 	token           string
 	secret          string
+}
+
+type overdriveAuth struct {
+	id                 int
+	teamID             string
+	slackUserID        string
+	overdriveAccountID string
+	token              string
+	refreshToken       string
+	tokenType          string
+	expiry             time.Time
 }
 
 func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
@@ -154,6 +240,67 @@ func getGoodreadsAuth(param goodreadsAuth) (result goodreadsAuth, err error) {
 		if err = rows.Scan(&result.id, &result.teamID, &result.slackUserID, &result.goodreadsUserID, &result.token, &result.secret); err != nil {
 			fmt.Println("Error scanning auth:" + err.Error())
 			return
+		}
+		return
+	}
+
+	return result, errors.New("User not found")
+}
+
+func getOverdriveAuth(param overdriveAuth) (result overdriveAuth, err error) {
+	var query bytes.Buffer
+	query.WriteString("SELECT id, teamid, slackuserid, overdriveaccountid, token, refreshtoken, tokenType, expiry FROM overdrive_auth WHERE 1 = 1 ")
+	if param.id != 0 {
+		query.WriteString(" AND id = ")
+		query.WriteString(string(param.id))
+	}
+	if param.teamID != "" {
+		query.WriteString(" AND teamid = '")
+		query.WriteString(param.teamID)
+		query.WriteString("'")
+	}
+	if param.slackUserID != "" {
+		query.WriteString(" AND slackuserid = '")
+		query.WriteString(param.slackUserID)
+		query.WriteString("'")
+	}
+	if param.overdriveAccountID != "" {
+		query.WriteString(" AND overdriveAccountID = '")
+		query.WriteString(param.overdriveAccountID)
+		query.WriteString("'")
+	}
+	if param.token != "" {
+		query.WriteString(" AND token = '")
+		query.WriteString(param.token)
+		query.WriteString("'")
+	}
+	if param.refreshToken != "" {
+		query.WriteString(" AND refreshtoken = '")
+		query.WriteString(param.refreshToken)
+		query.WriteString("'")
+	}
+	if param.tokenType != "" {
+		query.WriteString(" AND tokenType = '")
+		query.WriteString(param.tokenType)
+		query.WriteString("'")
+	}
+	query.WriteString(" ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY")
+
+	rows, err := db.Query(query.String())
+	if err != nil {
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		if err = rows.Scan(&result.id, &result.teamID, &result.slackUserID, &result.overdriveAccountID, &result.token, &result.refreshToken, &result.tokenType, &result.expiry); err != nil {
+			fmt.Println("Error scanning auth:" + err.Error())
+			return
+		}
+		if result.token != "" {
+			result.token = decrypt([]byte(config.Keys.Key1), result.token)
+		}
+		if result.refreshToken != "" {
+			result.refreshToken = decrypt([]byte(config.Keys.Key2), result.refreshToken)
 		}
 		return
 	}

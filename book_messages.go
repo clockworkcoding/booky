@@ -16,7 +16,7 @@ import (
 
 func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
-	if values.bookId == "" {
+	if values.bookID == "" {
 		results, err := gr.GetSearch(values.Query)
 		if err != nil {
 			fmt.Println(err.Error())
@@ -30,9 +30,9 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		if values.Index >= len(results.Search_work) {
 			values.Index = 0
 		}
-		values.bookId = results.Search_work[values.Index].Search_best_book.Search_id.Text
+		values.bookID = results.Search_work[values.Index].Search_best_book.Search_id.Text
 	}
-	book, err := gr.GetBook(values.bookId)
+	book, err := gr.GetBook(values.bookID)
 	if err != nil {
 		fmt.Println(err.Error())
 		return
@@ -85,7 +85,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		},
 	}
 	if wrongBookButtons {
-		values.Index += 1
+		values.Index++
 		nextValues := values.encodeValues()
 		values.Index -= 2
 		prevValues := values.encodeValues()
@@ -130,29 +130,33 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		attachments = append(attachments, wrongBookButtons)
 	} else {
 		values := goodreadsButtonValues{
-			bookID: book.Book_id[0].Text,
+			bookID:   book.Book_id[0].Text,
+			bookName: book.Book_title[0].Text,
 		}
-		buttons := []slack.AttachmentAction{
-			slack.AttachmentAction{
-				Name:  "addToShelf",
-				Text:  "Add to your shelf",
-				Type:  "button",
-				Value: values.encodeValues(),
+		odValue := book.Book_title[0].Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text
+		odValue = strings.Replace(odValue, ".", " ", -1)
+		log.Printf("Book: %#v", book)
+		buttons := slack.Attachment{
+			Actions: []slack.AttachmentAction{
+
+				slack.AttachmentAction{
+					Name:  "addToShelf",
+					Text:  "Add to Goodreads",
+					Type:  "button",
+					Value: values.encodeValues(),
+				},
+				// slack.AttachmentAction{
+				// 	Name:  "checkOverdrive",
+				// 	Text:  "Check Your Library",
+				// 	Type:  "button",
+				// 	Value: odValue,
+				// },
 			},
+			CallbackID: "bookaction",
+			Fallback:   "Something went wrong, try again later",
 		}
 
-		goodreadsAttachment := newGoodreadsButtonGroup(buttons)
-		var amazonLink string
-		switch {
-		case len(book.Book_isbn13) > 0:
-			amazonLink = getAmazonAffiliateLink(book.Book_isbn13[0].Text)
-		case len(book.Book_isbn) > 0:
-			amazonLink = getAmazonAffiliateLink(book.Book_isbn[0].Text)
-		}
-		if amazonLink != "" {
-			goodreadsAttachment.Footer = fmt.Sprintf("Buy it on Amazon: %s", shortenURl(amazonLink))
-		}
-		attachments = append(attachments, goodreadsAttachment)
+		attachments = append(attachments, buttons)
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
@@ -209,7 +213,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	if !strings.Contains(link.Event.Links[0].URL, "book/show/") {
 		return
 	}
-	values := wrongBookButtonValues{bookId: strings.Split(link.Event.Links[0].URL, "book/show/")[1]}
+	values := wrongBookButtonValues{bookID: strings.Split(link.Event.Links[0].URL, "book/show/")[1]}
 	_, token, _, err := getSlackAuth(link.TeamID)
 	if err != nil {
 		log.Output(0, err.Error())
@@ -222,7 +226,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 		return
 	}
 	post.Attachments[0].Text = post.Attachments[1].Text
-	//post.Attachments[0].Actions = post.Attachments[2].Actions
+	post.Attachments[0].Actions = post.Attachments[2].Actions
 	post.Attachments[0].CallbackID = post.Attachments[2].CallbackID
 	post.Attachments[0].Footer = post.Attachments[2].Footer
 
@@ -338,7 +342,7 @@ type wrongBookButtonValues struct {
 	Query       string `json:"query"`
 	Index       int    `json:"index"`
 	IsEphemeral bool   `json:"is_ephemeral"`
-	bookId      string
+	bookID      string
 }
 
 func (values *wrongBookButtonValues) encodeValues() string {
