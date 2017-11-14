@@ -245,7 +245,6 @@ func routing() {
 }
 
 func redirect(w http.ResponseWriter, r *http.Request) {
-	log.Output(1, fmt.Sprintf(r.URL.Path))
 	if url := os.Getenv(strings.Replace(r.URL.Path, "/", "URL_", 1)); url != "" {
 		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
 	} else {

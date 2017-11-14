@@ -30,22 +30,20 @@ func saveOverdriveAuth(param overdriveAuth) (err error) {
 		return
 	}
 	if param.id != 0 {
-		query := fmt.Sprintf(`UPDATE overdrive_auth
-	SET token = '%s' ,
-	refreshtoken = '%s',
-	tokenType = '%s',
-	expiry = '%v',
-	overdriveaccountid = '%s'
-	where id = %v`,
-
-			encrypt([]byte(config.Keys.Key1), param.token), encrypt([]byte(config.Keys.Key2), param.refreshToken), param.tokenType, param.expiry.Format(time.RFC3339Nano), param.overdriveAccountID, param.id)
-		if _, err = db.Exec(query); err != nil {
+		if _, err = db.Exec(`UPDATE overdrive_auth
+	SET token = $1 ,
+	refreshtoken = $2,
+	tokenType = $3,
+	expiry = $4,
+	overdriveaccountid = $5
+	where id = $6`,
+			encrypt([]byte(config.Keys.Key1), param.token), encrypt([]byte(config.Keys.Key2), param.refreshToken), param.tokenType, param.expiry.Format(time.RFC3339Nano), param.overdriveAccountID, param.id); err != nil {
 			fmt.Println("Error saving overdrive auth: " + err.Error())
 			return
 		}
 
 	} else {
-		if _, err = db.Exec(fmt.Sprintf(`INSERT INTO overdrive_auth(
+		if _, err = db.Exec(`INSERT INTO overdrive_auth(
 		teamid ,
 		slackuserid ,
 		overdriveaccountid,
@@ -54,8 +52,8 @@ func saveOverdriveAuth(param overdriveAuth) (err error) {
 		tokenType,
 		expiry,
 		createdtime
-		) VALUES ('%s','%s','%s','%s','%s','%s', '%v', now())`,
-			param.teamID, param.slackUserID, param.overdriveAccountID, param.token, param.refreshToken, param.tokenType, param.expiry.Format(time.RFC3339Nano))); err != nil {
+		) VALUES ($1,$2,$3,$4,$5,$6, $7, now())`,
+			param.teamID, param.slackUserID, param.overdriveAccountID, param.token, param.refreshToken, param.tokenType, param.expiry.Format(time.RFC3339Nano)); err != nil {
 			fmt.Println("Error saving overdrive auth: " + err.Error())
 			return
 		}
@@ -78,26 +76,26 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 		return
 	}
 	if param.id != 0 {
-		if _, err = db.Exec(fmt.Sprintf(`UPDATE goodreads_auth
-	SET token = '%s' ,
-	secret = '%s',
-	goodreadsuserid = '%s'
-	where id = %v`,
-			param.token, param.secret, param.goodreadsUserID, param.id)); err != nil {
+		if _, err = db.Exec(`UPDATE goodreads_auth
+	SET token = $1,
+	secret = $2,
+	goodreadsuserid = $3
+	where id =$4`,
+			param.token, param.secret, param.goodreadsUserID, param.id); err != nil {
 			fmt.Println("Error saving goodreads auth: " + err.Error())
 			return
 		}
 
 	} else {
-		if _, err = db.Exec(fmt.Sprintf(`INSERT INTO goodreads_auth(
+		if _, err = db.Exec(`INSERT INTO goodreads_auth(
 		teamid ,
 		slackuserid ,
 		goodreadsuserid,
 		token ,
 		secret ,
 		createdtime
-		) VALUES ('%s','%s','%s','%s','%s', now())`,
-			param.teamID, param.slackUserID, param.goodreadsUserID, param.token, param.secret)); err != nil {
+		) VALUES ($1,$2,$3,$4,$5, now())`,
+			param.teamID, param.slackUserID, param.goodreadsUserID, param.token, param.secret); err != nil {
 			fmt.Println("Error saving goodreads auth: " + err.Error())
 			return
 		}
@@ -121,7 +119,7 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 		fmt.Println("Error creating database table: " + err.Error())
 		return
 	}
-	if _, err = db.Exec(fmt.Sprintf(`INSERT INTO slack_auth (
+	if _, err = db.Exec(`INSERT INTO slack_auth (
 		team ,
 		teamid,
 		token ,
@@ -130,8 +128,8 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 		channel ,
 		channelid,
 		createdtime	)
-		VALUES ('%s','%s','%s','%s','%s','%s','%s', now())`, oAuth.TeamName, oAuth.TeamID,
-		oAuth.AccessToken, oAuth.IncomingWebhook.URL, oAuth.IncomingWebhook.ConfigurationURL, oAuth.IncomingWebhook.Channel, oAuth.IncomingWebhook.ChannelID)); err != nil {
+		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.TeamName, oAuth.TeamID,
+		oAuth.AccessToken, oAuth.IncomingWebhook.URL, oAuth.IncomingWebhook.ConfigurationURL, oAuth.IncomingWebhook.Channel, oAuth.IncomingWebhook.ChannelID); err != nil {
 		fmt.Println("Error saving slack auth: " + err.Error())
 		return
 	}
@@ -140,7 +138,7 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 }
 
 func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
-	rows, err := db.Query(fmt.Sprintf("SELECT id, token, channelid FROM slack_auth WHERE teamid = '%s' ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID))
+	rows, err := db.Query("SELECT id, token, channelid FROM slack_auth WHERE teamid = $1 ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID)
 	if err != nil {
 		return
 	}
