@@ -81,7 +81,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		slack.Attachment{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     fmt.Sprintf("Posted by %s using /booky | Data from Goodreads.com", values.UserName),
+			Footer:     fmt.Sprintf("Posted by %s using /booky | Data from Goodreads.com | patreon.com/gobooky ", values.UserName),
 		},
 	}
 	if wrongBookButtons {
