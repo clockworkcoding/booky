@@ -245,7 +245,12 @@ func routing() {
 }
 
 func redirect(w http.ResponseWriter, r *http.Request) {
-	http.Redirect(w, r, config.RedirectURL+r.URL.Path, http.StatusTemporaryRedirect)
+	log.Output(1, fmt.Sprintf(r.URL.Path))
+	if url := os.Getenv(r.URL.Path); url != "" {
+		http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	} else {
+		http.Redirect(w, r, config.RedirectURL+r.URL.Path, http.StatusTemporaryRedirect)
+	}
 }
 
 func init() {
