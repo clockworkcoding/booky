@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -240,7 +241,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 			},
 		},
 	}
-	api.Unfurl(link.Event.Channel, params)
+	api.Unfurl(context.Background(), link.Event.Channel, params)
 }
 func wrongBookButton(action action, token string) {
 
@@ -328,7 +329,7 @@ func wrongBookButton(action action, token string) {
 			AsUser:      params.AsUser,
 		}
 
-		_, _, _, err = api.UpdateMessageWithAttachments(action.Channel.ID, updateParams)
+		_, _, _, err = api.UpdateMessageWithAttachments(context.Background(), action.Channel.ID, updateParams)
 		if err != nil {
 			responseError(action.ResponseURL, err.Error(), token)
 			return
