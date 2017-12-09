@@ -88,6 +88,17 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		goodreadsButton(action, token)
 	case "overdrive":
 		overdriveButton(action, token)
+	case "friendAction":
+		switch action.Actions[0].Name {
+		case "addSelfToFriends":
+			addSelfToFriendsButton(action, token)
+		case "addFriend":
+			addFriendButton(action, token)
+		case "addAllFriends":
+			addAllFriendButton(action, token)
+		default:
+			log.Println(action.Actions[0].Name)
+		}
 	case "bookaction":
 		switch action.Actions[0].Name {
 		case "checkOverdrive":
@@ -95,6 +106,8 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		case "addToShelf":
 			goodreadsButton(action, token)
 		}
+	default:
+		log.Println(action.CallbackID)
 	}
 
 }
@@ -108,6 +121,10 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	_, token, _, err := getSlackAuth(teamID)
 	if err != nil {
 		writeError(w, http.StatusUnauthorized, err.Error())
+		return
+	}
+	if queryText == "-friends" {
+		friendsCommand(w, r)
 		return
 	}
 	w.Write([]byte(""))
@@ -234,6 +251,7 @@ func routing() {
 	mux.Handle("/odauth", http.HandlerFunc(overdriveAuthCallback))
 	mux.Handle("/event", http.HandlerFunc(event))
 	mux.Handle("/booky", http.HandlerFunc(bookyCommand))
+	mux.Handle("/friends", http.HandlerFunc(friendsCommand))
 	mux.Handle("/button", http.HandlerFunc(buttonPressed))
 	mux.Handle("/gaction", http.HandlerFunc(lookUpHandler))
 	mux.Handle("/", http.HandlerFunc(redirect))
