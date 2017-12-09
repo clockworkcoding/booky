@@ -176,7 +176,7 @@ func addAllFriendButton(action action, token string) {
 						goodreadsAuthMessage(action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
 						return
 					}
-					time.Sleep(500)
+					time.Sleep(2000)
 					count++
 				}
 			}
