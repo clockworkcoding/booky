@@ -97,12 +97,12 @@ func goodreadsShowShelves(action action, token string, auth goodreadsAuth) {
 		return
 	}
 
-	commonShelves := slack.OptionGroup{Text: "Non-exclusive Shelves"}
-	exclusiveShelves := slack.OptionGroup{Text: "Exclusive Shelves"}
+	commonShelves := slack.AttachmentActionOptionGroup{Text: "Non-exclusive Shelves"}
+	exclusiveShelves := slack.AttachmentActionOptionGroup{Text: "Exclusive Shelves"}
 	for _, shelf := range shelves.Shelf_user_shelf {
 		values.shelfID = shelf.Shelf_id.Text
 		values.shelfName = shelf.Shelf_name.Text
-		option := slack.Option{
+		option := slack.AttachmentActionOption{
 			Text:  shelf.Shelf_name.Text,
 			Value: values.encodeValues(),
 		}
@@ -126,7 +126,7 @@ func goodreadsShowShelves(action action, token string, auth goodreadsAuth) {
 				slack.AttachmentAction{
 					Type: "select",
 					Name: "selectedShelf",
-					OptionGroups: []slack.OptionGroup{
+					OptionGroups: []slack.AttachmentActionOptionGroup{
 						exclusiveShelves,
 						commonShelves,
 					},

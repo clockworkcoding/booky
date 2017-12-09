@@ -13,7 +13,7 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/goodreads",
-			"Rev": "0ad1871d03688b3b9242f51660cb764d91c74f43"
+			"Rev": "dc565c48f23a933b07b5c4e54ab1301f4a2e9bd2"
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/goverdrive",
@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-179-g1880c60",
-			"Rev": "1880c605754fbf01c9164f2ed28b47d41d17485a"
+			"Comment": "v0.0.1-233-g75b367c",
+			"Rev": "75b367cfc22497f7e2de1a110d233880611cda7f"
 		},
 		{
 			"ImportPath": "github.com/go-redis/redis",
