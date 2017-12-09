@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"math/rand"
 	"net/http"
 	"strings"
 	"time"
@@ -203,12 +204,21 @@ func addFriendButton(action action, token string) {
 		simpleResponse(action.ResponseURL, "It's great that you want to be your own friend!", false, token)
 		return
 	}
+	time.Sleep(1000)
 	c := goodreads.NewClientWithToken(config.Goodreads.Key, config.Goodreads.Secret, auth.token, auth.secret)
 	err = c.AddFriend(values.goodreadsID)
 	if err != nil {
 		if err.Error() == "409 Conflict" {
 			simpleResponse(action.ResponseURL, fmt.Sprintf("A friend request to @%s already exists, or you're already friends", values.UserName), false, token)
 			return
+		}
+		if err.Error() == "404 Not Found" {
+			time.Sleep(time.Duration(1000 + rand.Intn(1000)))
+			err = c.AddFriend(values.goodreadsID)
+		}
+		if err != nil {
+			simpleResponse(action.ResponseURL, fmt.Sprintf("Please try again later, the application may have exceeded the Goodreads rate limit", values.UserName), false, token)
+
 		}
 	}
 	simpleResponse(action.ResponseURL, "Sending a friend request to @"+values.UserName, false, token)
