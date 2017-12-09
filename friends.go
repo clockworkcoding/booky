@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/clockworkcoding/goodreads"
 	"github.com/clockworkcoding/slack"
@@ -175,6 +176,7 @@ func addAllFriendButton(action action, token string) {
 						goodreadsAuthMessage(action, token, "Something went wrong, make sure your Goodreads account is connected to Booky")
 						return
 					}
+					time.Sleep(500)
 					count++
 				}
 			}
