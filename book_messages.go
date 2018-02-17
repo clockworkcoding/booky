@@ -146,12 +146,12 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 					Type:  "button",
 					Value: values.encodeValues(),
 				},
-				// slack.AttachmentAction{
-				// 	Name:  "checkOverdrive",
-				// 	Text:  "Check Your Library",
-				// 	Type:  "button",
-				// 	Value: odValue,
-				// },
+				slack.AttachmentAction{
+					Name:  "checkOverdrive",
+					Text:  "Check Your Library",
+					Type:  "button",
+					Value: odValue,
+				},
 			},
 			CallbackID: "bookaction",
 			Fallback:   "Something went wrong, try again later",

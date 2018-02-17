@@ -217,7 +217,7 @@ func addFriendButton(action action, token string) {
 			err = c.AddFriend(values.goodreadsID)
 		}
 		if err != nil {
-			simpleResponse(action.ResponseURL, fmt.Sprintf("Please try again later, the application may have exceeded the Goodreads rate limit", values.UserName), false, token)
+			simpleResponse(action.ResponseURL, fmt.Sprintf("Please try again later, the application may have exceeded the Goodreads rate limit"), false, token)
 
 		}
 	}
@@ -228,7 +228,7 @@ func addFriendButton(action action, token string) {
 type friendButtonValues struct {
 	User        string `json:"user"`
 	UserName    string `json:"user_name"`
-	goodreadsID string `json:"goodreads_id"`
+	goodreadsID string
 }
 
 func (values *friendButtonValues) encodeValues() string {
