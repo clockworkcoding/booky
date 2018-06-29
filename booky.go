@@ -106,6 +106,9 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		case "addToShelf":
 			goodreadsButton(action, token)
 		}
+	case "menuSearch":
+		log.Println(action)
+		menuSearch(w, action)
 	default:
 		log.Println(action.CallbackID)
 	}
@@ -162,15 +165,40 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		responseError(responseURL, err.Error(), token)
 	}
 }
+func menuSearch(w http.ResponseWriter, action action) {
+	values := wrongBookButtonValues{
+		Index:       0,
+		User:        action.User.ID,
+		Query:       action.Message.Text,
+		IsEphemeral: true,
+		UserName:    action.User.Name,
+	}
 
-func checkTextForBook(message eventMessage) {
-	tokenized := strings.Split(message.Event.Text, "_")
-	if len(tokenized) < 2 {
+	_, token, _, err := getSlackAuth(action.Team.ID)
+	responseURL := action.ResponseURL
+
+	params, err := createBookPost(values, true)
+	if err != nil {
+		if err.Error() == "no books found" {
+			simpleResponse(responseURL, "No books found, try a broader search", false, token)
+		} else {
+			responseError(responseURL, err.Error(), token)
+		}
 		return
 	}
-	queryText := tokenized[1]
-	channel := message.Event.Channel
-	teamID := message.TeamID
+	responseParams := slack.NewResponseMessageParameters()
+	responseParams.ResponseType = "ephemeral"
+	responseParams.ReplaceOriginal = true
+	responseParams.Text = params.Text
+	responseParams.Attachments = params.Attachments
+	api := slack.New(token)
+	err = api.PostResponse(responseURL, responseParams)
+	if err != nil {
+		responseError(responseURL, err.Error(), token)
+	}
+}
+
+func CheckTextForBook(queryText string, teamID string, channel string, user string) {
 	_, token, authedChannel, err := getSlackAuth(teamID)
 	if err != nil || channel != authedChannel {
 		if err != nil {
@@ -181,7 +209,7 @@ func checkTextForBook(message eventMessage) {
 		return
 	}
 	values := wrongBookButtonValues{
-		User:        message.Event.User,
+		User:        user,
 		Query:       queryText,
 		Index:       0,
 		IsEphemeral: false,

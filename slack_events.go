@@ -71,6 +71,13 @@ type action struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"user"`
+	Message struct {
+		Type string `json:"type"`
+		User string `json:"user"`
+		Ts   string `json:"ts"`
+		Text string `json:"text"`
+	} `json:"message"`
+
 	ActionTs        string          `json:"action_ts"`
 	MessageTs       string          `json:"message_ts"`
 	AttachmentID    string          `json:"attachment_id"`

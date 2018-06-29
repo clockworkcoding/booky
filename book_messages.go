@@ -198,7 +198,15 @@ func event(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
-		checkTextForBook(message)
+		tokenized := strings.Split(message.Event.Text, "_")
+		if len(tokenized) < 2 {
+			return
+		}
+		queryText := tokenized[1]
+		channel := message.Event.Channel
+		teamID := message.TeamID
+		user := message.Event.User
+		CheckTextForBook(queryText, teamID, channel, user)
 	case "link_shared":
 		var link eventLinkShared
 		err := json.Unmarshal(event, &link)
