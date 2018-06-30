@@ -1,6 +1,6 @@
 {
 	"ImportPath": "github.com/clockworkcoding/booky",
-	"GoVersion": "go1.8",
+	"GoVersion": "go1.9",
 	"GodepVersion": "v79",
 	"Deps": [
 		{
@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-235-g740c544",
-			"Rev": "740c54432c0b4320ff7c409d37eca4aa97213f91"
+			"Comment": "v0.0.1-235-gf50a287",
+			"Rev": "f50a28793fa7c956dd2cad9b77b0efeae14d1513"
 		},
 		{
 			"ImportPath": "github.com/go-redis/redis",

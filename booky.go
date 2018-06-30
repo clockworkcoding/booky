@@ -108,7 +108,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		}
 	case "menuSearch":
 		log.Println(action)
-		menuSearch(w, action)
+		menuSearch(action)
 	default:
 		log.Println(action.CallbackID)
 	}
@@ -165,7 +165,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		responseError(responseURL, err.Error(), token)
 	}
 }
-func menuSearch(w http.ResponseWriter, action action) {
+func menuSearch(action action) {
 	simpleDialog := slack.Dialog{
 		CallbackID:     "simpleDialog",
 		NotifyOnCancel: false,
@@ -182,8 +182,13 @@ func menuSearch(w http.ResponseWriter, action action) {
 
 	_, token, _, _ := getSlackAuth(action.Team.ID)
 	api := slack.New(token)
-	api.PostDialog(action.TriggerID, simpleDialog)
+	err := api.PostDialog(action.TriggerID, simpleDialog)
 
+	if err != nil {
+		log.Output(0, err.Error())
+		return
+	}
+	log.Output(0, "no error?")
 	/*	values := wrongBookButtonValues{
 			Index:       0,
 			User:        action.User.ID,
