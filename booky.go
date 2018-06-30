@@ -182,7 +182,7 @@ func menuSearch(action action) {
 
 	_, token, _, _ := getSlackAuth(action.Team.ID)
 	api := slack.New(token)
-	err := api.PostDialog(action.TriggerID, simpleDialog)
+	err := api.PostDialog(action.TriggerID, token, simpleDialog)
 
 	if err != nil {
 		log.Output(0, err.Error())

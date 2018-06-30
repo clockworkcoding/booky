@@ -47,6 +47,7 @@ func (api *Client) PostDialog(triggerID string, token string, dialog Dialog) err
 	jsonStr, err := json.Marshal(post)
 	req, err := http.NewRequest("POST", SLACK_API+"dialog.open", bytes.NewBuffer(jsonStr))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Add("Authorization", "Bearer "+token)
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
