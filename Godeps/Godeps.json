@@ -21,8 +21,8 @@
 		},
 		{
 			"ImportPath": "github.com/clockworkcoding/slack",
-			"Comment": "v0.0.1-236-ge009d4f",
-			"Rev": "e009d4f1af56c5f50cba2c7c67148752edc20721"
+			"Comment": "v0.0.1-236-gad6abbc",
+			"Rev": "ad6abbc690d70afa8b844174e71b575a246a4d77"
 		},
 		{
 			"ImportPath": "github.com/go-redis/redis",

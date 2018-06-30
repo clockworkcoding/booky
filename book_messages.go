@@ -216,6 +216,96 @@ func event(w http.ResponseWriter, r *http.Request) {
 		generateGoodreadsLinks(link)
 	}
 }
+func menuSearch(action action) {
+	_, token, _, err := getSlackAuth(action.Team.ID)
+	api := slack.New(token)
+	if len(strings.Split(action.Message.Text, " ")) == 1 {
+		values := wrongBookButtonValues{
+			Index:       0,
+			User:        action.User.ID,
+			Query:       action.Message.Text,
+			IsEphemeral: true,
+			UserName:    action.User.Name,
+		}
+
+		responseURL := action.ResponseURL
+
+		params, err := createBookPost(values, true)
+		if err != nil {
+			if err.Error() == "no books found" {
+				simpleResponse(responseURL, "No books found, try a broader search", false, token)
+			} else {
+				responseError(responseURL, err.Error(), token)
+			}
+			return
+		}
+		responseParams := slack.NewResponseMessageParameters()
+		responseParams.ResponseType = "ephemeral"
+		responseParams.ReplaceOriginal = true
+		responseParams.Text = params.Text
+		responseParams.Attachments = params.Attachments
+		err = api.PostResponse(responseURL, responseParams)
+		if err != nil {
+			responseError(responseURL, err.Error(), token)
+		}
+	}
+	elements := []slack.DialogElement{
+		{
+			Label:    "Post Text",
+			Type:     "textarea",
+			Name:     "searchtext",
+			Value:    action.Message.Text,
+			Optional: true,
+		},
+	}
+
+	options := findTitleOptions(action.Message.Text, "*")
+	options = append(options, findTitleOptions(action.Message.Text, "_")...)
+
+	if len(options) > 0 {
+		selectElement := slack.DialogElement{
+			Label:    "Potential titles",
+			Type:     "select",
+			Name:     "selecttitle",
+			Options:  options,
+			Optional: true,
+		}
+		elements = append(elements, selectElement)
+	}
+
+	lookUpDialog := slack.Dialog{
+		CallbackID:     "lookUpDialog",
+		NotifyOnCancel: false,
+		SubmitLabel:    "Search",
+		Title:          "Look up from post",
+		Elements:       elements,
+	}
+
+	log.Println(0, "start method: ", lookUpDialog)
+	err = api.PostDialog(action.TriggerID, token, lookUpDialog)
+	if err != nil {
+		log.Println(0, err.Error())
+		return
+	}
+	log.Println(0, "no error: ", lookUpDialog)
+}
+
+func findTitleOptions(text string, sep string) (options []slack.DialogOption) {
+	if bold := strings.Split(text, sep); len(bold) > 1 {
+		for i, title := range bold {
+			if i%2 == 0 {
+				continue
+			}
+			option := slack.DialogOption{
+				Label: title,
+				Value: title,
+			}
+
+			options = append(options, option)
+		}
+	}
+	return options
+}
 
 func generateGoodreadsLinks(link eventLinkShared) {
 
