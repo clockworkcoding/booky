@@ -21,6 +21,7 @@ type eventMessage struct {
 	AuthedUsers []string        `json:"authed_users"`
 	EventID     string          `json:"event_id"`
 	EventTime   json.RawMessage `json:"event_time"`
+	TriggerID   string          `json:"trigger_id"`
 }
 
 type eventLinkShared struct {
@@ -85,4 +86,5 @@ type action struct {
 	IsAppUnfurl     bool            `json:"is_app_unfurl"`
 	OriginalMessage json.RawMessage `json:"original_message"`
 	ResponseURL     string          `json:"response_url"`
+	TriggerID       string          `json:"trigger_id"`
 }

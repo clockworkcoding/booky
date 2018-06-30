@@ -166,36 +166,54 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func menuSearch(w http.ResponseWriter, action action) {
-	values := wrongBookButtonValues{
-		Index:       0,
-		User:        action.User.ID,
-		Query:       action.Message.Text,
-		IsEphemeral: true,
-		UserName:    action.User.Name,
+	simpleDialog := slack.Dialog{
+		CallbackID:     "simpleDialog",
+		NotifyOnCancel: false,
+		SubmitLabel:    "Search",
+		Title:          "Look up from post",
+		Elements: []slack.DialogElements{
+			{
+				Label: "Post Text",
+				Type:  "textarea",
+				Name:  "searchtext",
+				Value: action.Message.Text,
+			}},
 	}
 
-	_, token, _, err := getSlackAuth(action.Team.ID)
-	responseURL := action.ResponseURL
-
-	params, err := createBookPost(values, true)
-	if err != nil {
-		if err.Error() == "no books found" {
-			simpleResponse(responseURL, "No books found, try a broader search", false, token)
-		} else {
-			responseError(responseURL, err.Error(), token)
-		}
-		return
-	}
-	responseParams := slack.NewResponseMessageParameters()
-	responseParams.ResponseType = "ephemeral"
-	responseParams.ReplaceOriginal = true
-	responseParams.Text = params.Text
-	responseParams.Attachments = params.Attachments
+	_, token, _, _ := getSlackAuth(action.Team.ID)
 	api := slack.New(token)
-	err = api.PostResponse(responseURL, responseParams)
-	if err != nil {
-		responseError(responseURL, err.Error(), token)
-	}
+	api.PostDialog(action.TriggerID, simpleDialog)
+
+	/*	values := wrongBookButtonValues{
+			Index:       0,
+			User:        action.User.ID,
+			Query:       action.Message.Text,
+			IsEphemeral: true,
+			UserName:    action.User.Name,
+		}
+
+		_, token, _, err := getSlackAuth(action.Team.ID)
+		responseURL := action.ResponseURL
+
+		params, err := createBookPost(values, true)
+		if err != nil {
+			if err.Error() == "no books found" {
+				simpleResponse(responseURL, "No books found, try a broader search", false, token)
+			} else {
+				responseError(responseURL, err.Error(), token)
+			}
+			return
+		}
+		responseParams := slack.NewResponseMessageParameters()
+		responseParams.ResponseType = "ephemeral"
+		responseParams.ReplaceOriginal = true
+		responseParams.Text = params.Text
+		responseParams.Attachments = params.Attachments
+		api := slack.New(token)
+		err = api.PostResponse(responseURL, responseParams)
+		if err != nil {
+			responseError(responseURL, err.Error(), token)
+		}*/
 }
 
 func CheckTextForBook(queryText string, teamID string, channel string, user string) {
