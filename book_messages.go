@@ -15,7 +15,7 @@ import (
 	"github.com/clockworkcoding/slack"
 )
 
-func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params slack.PostMessageParameters, err error) {
+func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFullDescription bool) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	if values.bookID == "" {
 		results, err := gr.GetSearch(values.Query)
@@ -61,28 +61,28 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 	rightValues := values.encodeValues()
 
 	attachments := []slack.Attachment{
-		slack.Attachment{
+		{
 			Title:      book.Book_title[0].Text,
 			TitleLink:  book.Book_url.Text,
 			AuthorName: authorBuffer.String(),
 			ThumbURL:   book.Book_image_url[0].Text,
 			Fields: []slack.AttachmentField{
-				slack.AttachmentField{
+				{
 					Title: fmt.Sprintf("Avg Rating (%s)", rating),
 					Value: stars,
 					Short: true,
 				},
-				slack.AttachmentField{
+				{
 					Title: "Ratings",
 					Value: book.Book_ratings_count[0].Text,
 					Short: true,
 				},
 			},
 		},
-		slack.Attachment{
+		{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     fmt.Sprintf("Posted by %s using /booky | Data from Goodreads.com | patreon.com/gobooky ", values.UserName),
+			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com | patreon.com/gobooky ", values.UserName),
 		},
 	}
 	if wrongBookButtons {
@@ -140,24 +140,35 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool) (params
 		buttons := slack.Attachment{
 			Actions: []slack.AttachmentAction{
 
-				slack.AttachmentAction{
+				{
 					Name:  "addToShelf",
 					Text:  "Add to Goodreads",
 					Type:  "button",
 					Value: values.encodeValues(),
 				},
-				slack.AttachmentAction{
-					Name:  "checkOverdrive",
-					Text:  "Check Your Library",
-					Type:  "button",
-					Value: odValue,
-				},
+				//slack.AttachmentAction{
+				//	Name:  "checkOverdrive",
+				//	Text:  "Check Your Library",
+				//	Type:  "button",
+				//	Value: odValue,
+				//},
+
 			},
 			CallbackID: "bookaction",
 			Fallback:   "Something went wrong, try again later",
 		}
 
 		attachments = append(attachments, buttons)
+	}
+	if !showFullDescription && len(attachments[1].Text) > 143 {
+		attachments[2].Actions = append(attachments[2].Actions,
+			slack.AttachmentAction{
+				Name:  "fullDescription",
+				Text:  "Show Full Description",
+				Type:  "button",
+				Value: values.encodeValues(),
+			})
+		attachments[1].Text = attachments[1].Text[:140] + "..."
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
@@ -230,7 +241,7 @@ func menuSearch(action action) {
 
 		responseURL := action.ResponseURL
 
-		params, err := createBookPost(values, true)
+		params, err := createBookPost(values, true, true)
 		if err != nil {
 			if err.Error() == "no books found" {
 				simpleResponse(responseURL, "No books found, try a broader search", false, token)
@@ -261,6 +272,7 @@ func menuSearch(action action) {
 
 	options := findTitleOptions(action.Message.Text, "*")
 	options = append(options, findTitleOptions(action.Message.Text, "_")...)
+	options = append(options, findTitleOptions(action.Message.Text, "\"")...)
 
 	if len(options) > 0 {
 		selectElement := slack.DialogElement{
@@ -319,7 +331,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 		return
 	}
 
-	post, err := createBookPost(values, false)
+	post, err := createBookPost(values, false, false)
 	if err != nil {
 		log.Output(0, err.Error())
 		return
@@ -333,7 +345,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	params := slack.UnfurlParameters{
 		Timestamp: link.Event.MessageTs,
 		Unfurls: []slack.Unfurl{
-			slack.Unfurl{
+			{
 				UnfurlURL:  link.Event.Links[0].URL,
 				Attachment: post.Attachments[0],
 			},
@@ -373,9 +385,14 @@ func wrongBookButton(action action, token string) {
 		timestamp = v["ts"].(string)
 	}
 	wrongBookButtons := true
+	fullDescription := true
 	switch action.Actions[0].Name {
 	case "right book":
 		wrongBookButtons = false
+		fullDescription = false
+	case "fullDescription":
+		wrongBookButtons = false
+		fullDescription = true
 	case "nvm":
 		_, _, err = api.DeleteMessage(action.Channel.ID, timestamp)
 		if err != nil {
@@ -389,7 +406,7 @@ func wrongBookButton(action action, token string) {
 		return
 	}
 
-	params, err := createBookPost(values, wrongBookButtons)
+	params, err := createBookPost(values, wrongBookButtons, fullDescription)
 	if err != nil {
 		if err.Error() == "no books found" {
 			simpleResponse(action.ResponseURL, "No books found, try a broader search", true, token)
@@ -399,7 +416,18 @@ func wrongBookButton(action action, token string) {
 		return
 	}
 	//If it's an ephemeral post, replace it with an in_channel post after finding the right one, otherwise just update
-	if values.IsEphemeral {
+	if action.Actions[0].Name == "fullDescription" {
+		responseParams := slack.NewResponseMessageParameters()
+		responseParams.Text = params.Text + " (Full Description)"
+		responseParams.Attachments = params.Attachments
+		responseParams.ReplaceOriginal = false
+		responseParams.ResponseType = "ephemeral"
+
+		err = api.PostResponse(action.ResponseURL, responseParams)
+		if err != nil {
+			responseError(action.ResponseURL, err.Error(), token)
+		}
+	} else if values.IsEphemeral {
 		responseParams := slack.NewResponseMessageParameters()
 		responseParams.Text = params.Text
 		responseParams.Attachments = params.Attachments

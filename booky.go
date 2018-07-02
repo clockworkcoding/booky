@@ -105,6 +105,8 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 			overdriveButton(action, token)
 		case "addToShelf":
 			goodreadsButton(action, token)
+		case "fullDescription":
+			wrongBookButton(action, token)
 		}
 	case "menuSearch":
 		log.Println(action)
@@ -145,7 +147,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		UserName:    userName,
 	}
 
-	params, err := createBookPost(values, true)
+	params, err := createBookPost(values, true, true)
 	if err != nil {
 		if err.Error() == "no books found" {
 			simpleResponse(responseURL, "No books found, try a broader search", false, token)
@@ -183,7 +185,7 @@ func CheckTextForBook(queryText string, teamID string, channel string, user stri
 		IsEphemeral: false,
 		UserName:    "booky user",
 	}
-	params, err := createBookPost(values, true)
+	params, err := createBookPost(values, true, true)
 	if err != nil {
 		log.Output(0, err.Error())
 		return
