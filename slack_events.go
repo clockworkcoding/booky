@@ -50,6 +50,11 @@ type challenge struct {
 	Type      string `json:"type"`
 }
 
+type searchDialogSubmission struct {
+	SearchText  string `json:"searchtext"`
+	SelectTitle string `json:"selecttitle"`
+}
+
 type action struct {
 	Actions []struct {
 		Name            string `json:"name"`
@@ -79,6 +84,7 @@ type action struct {
 		Text string `json:"text"`
 	} `json:"message"`
 
+	Submission      string          `json:"type"`
 	ActionTs        string          `json:"action_ts"`
 	MessageTs       string          `json:"message_ts"`
 	AttachmentID    string          `json:"attachment_id"`
@@ -87,33 +93,4 @@ type action struct {
 	OriginalMessage json.RawMessage `json:"original_message"`
 	ResponseURL     string          `json:"response_url"`
 	TriggerID       string          `json:"trigger_id"`
-}
-
-type SearchFromPostSubmission struct {
-	Type       string `json:"type"`
-	Submission struct {
-		Name          string `json:"name"`
-		Email         string `json:"email"`
-		Phone         string `json:"phone"`
-		Meal          string `json:"meal"`
-		Comment       string `json:"comment"`
-		TeamChannel   string `json:"team_channel"`
-		WhoShouldSing string `json:"who_should_sing"`
-	} `json:"submission"`
-	CallbackID string `json:"callback_id"`
-	Team       struct {
-		ID     string `json:"id"`
-		Domain string `json:"domain"`
-	} `json:"team"`
-	User struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"user"`
-	Channel struct {
-		ID   string `json:"id"`
-		Name string `json:"name"`
-	} `json:"channel"`
-	ActionTs    string `json:"action_ts"`
-	Token       string `json:"token"`
-	ResponseURL string `json:"response_url"`
 }

@@ -109,8 +109,10 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 			wrongBookButton(action, token)
 		}
 	case "menuSearch":
-		log.Println(action)
 		menuSearch(action)
+	case "lookUpDialog":
+		log.Println(action)
+		dialogSearch(action)
 	default:
 		log.Println(action.CallbackID)
 	}
@@ -137,6 +139,34 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", true, token)
 		return
 	}
+	lookUpBook(responseURL, token, userID, userName, queryText)
+}
+
+func dialogSearch(action action) {
+	_, token, _, err := getSlackAuth(action.Team.ID)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
+	var submission searchDialogSubmission
+	println(action.Submission, action)
+	err = json.Unmarshal([]byte(action.Submission), &submission)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
+
+	var queryText string
+	if submission.SearchText == "" {
+		queryText = submission.SelectTitle
+	} else {
+		queryText = submission.SearchText
+	}
+
+	lookUpBook(action.ResponseURL, token, action.User.ID, action.User.Name, queryText)
+}
+
+func lookUpBook(responseURL, token, userID, userName, queryText string) {
 	go simpleResponse(responseURL, "Looking up your book", true, token)
 
 	values := wrongBookButtonValues{
