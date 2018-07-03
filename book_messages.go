@@ -260,30 +260,28 @@ func menuSearch(action action) {
 			responseError(responseURL, err.Error(), token)
 		}
 	}
-	elements := []slack.DialogElement{
-		{
-			Label:    "Post Text",
-			Type:     "textarea",
-			Name:     "searchtext",
-			Value:    action.Message.Text,
-			Optional: true,
-		},
-	}
+	var elements []slack.DialogElement
 
 	options := findTitleOptions(action.Message.Text, "*")
 	options = append(options, findTitleOptions(action.Message.Text, "_")...)
 	options = append(options, findTitleOptions(action.Message.Text, "\"")...)
 
 	if len(options) > 0 {
-		selectElement := slack.DialogElement{
+		elements = append(elements, slack.DialogElement{
 			Label:    "Potential titles",
 			Type:     "select",
 			Name:     "selecttitle",
 			Options:  options,
 			Optional: true,
-		}
-		elements = append(elements, selectElement)
+		})
 	}
+	elements = append(elements, slack.DialogElement{
+		Label:    "Custom Search",
+		Type:     "text",
+		Name:     "searchtext",
+		Hint:     "If booky can't find a title in the post, you can search for one here",
+		Optional: true,
+	})
 
 	lookUpDialog := slack.Dialog{
 		CallbackID:     "lookUpDialog",

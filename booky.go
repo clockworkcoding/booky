@@ -112,7 +112,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		menuSearch(action)
 	case "lookUpDialog":
 		log.Println(action)
-		dialogSearch(action)
+		dialogSearch(action, payload, w)
 	default:
 		log.Println(action.CallbackID)
 	}
@@ -142,25 +142,28 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	lookUpBook(responseURL, token, userID, userName, queryText)
 }
 
-func dialogSearch(action action) {
+func dialogSearch(action action, body string, w http.ResponseWriter) {
 	_, token, _, err := getSlackAuth(action.Team.ID)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
-	var submission searchDialogSubmission
-	println(action.Submission, action)
-	err = json.Unmarshal([]byte(action.Submission), &submission)
+
+	log.Println(action.Submission)
+	log.Println(action)
+	//err = json.Unmarshal(action.Submission, &submission)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
 		return
 	}
 
+	w.WriteHeader(200)
+
 	var queryText string
-	if submission.SearchText == "" {
-		queryText = submission.SelectTitle
+	if len(strings.TrimSpace(action.Submission["searchtext"])) > 0 {
+		queryText = action.Submission["searchtext"]
 	} else {
-		queryText = submission.SearchText
+		queryText = action.Submission["selecttitle"]
 	}
 
 	lookUpBook(action.ResponseURL, token, action.User.ID, action.User.Name, queryText)

@@ -84,13 +84,13 @@ type action struct {
 		Text string `json:"text"`
 	} `json:"message"`
 
-	Submission      string          `json:"type"`
-	ActionTs        string          `json:"action_ts"`
-	MessageTs       string          `json:"message_ts"`
-	AttachmentID    string          `json:"attachment_id"`
-	Token           string          `json:"token"`
-	IsAppUnfurl     bool            `json:"is_app_unfurl"`
-	OriginalMessage json.RawMessage `json:"original_message"`
-	ResponseURL     string          `json:"response_url"`
-	TriggerID       string          `json:"trigger_id"`
+	Submission      map[string]string `json:"submission"`
+	ActionTs        string            `json:"action_ts"`
+	MessageTs       string            `json:"message_ts"`
+	AttachmentID    string            `json:"attachment_id"`
+	Token           string            `json:"token"`
+	IsAppUnfurl     bool              `json:"is_app_unfurl"`
+	OriginalMessage json.RawMessage   `json:"original_message"`
+	ResponseURL     string            `json:"response_url"`
+	TriggerID       string            `json:"trigger_id"`
 }
