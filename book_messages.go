@@ -60,6 +60,11 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 
 	rightValues := values.encodeValues()
 
+	patreonText := ""
+	if len(config.Patreon) > 0 {
+		patreonText = " | " + config.Patreon
+	}
+
 	attachments := []slack.Attachment{
 		{
 			Title:      book.Book_title[0].Text,
@@ -82,7 +87,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com | patreon.com/gobooky ", values.UserName),
+			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com%s", values.UserName, patreonText),
 		},
 	}
 	if wrongBookButtons {

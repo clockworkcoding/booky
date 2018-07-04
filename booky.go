@@ -258,6 +258,7 @@ type Configuration struct {
 	URL         string `json:"URL"`
 	BitlyKey    string `json:"BitlyKey"`
 	RedirectURL string `json:"RedirectURL"`
+	Patreon     string `json:"patreon"`
 }
 
 func main() {
