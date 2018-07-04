@@ -105,7 +105,14 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 			overdriveButton(action, token)
 		case "addToShelf":
 			goodreadsButton(action, token)
+		case "fullDescription":
+			wrongBookButton(action, token)
 		}
+	case "menuSearch":
+		menuSearch(action)
+	case "lookUpDialog":
+		log.Println(action)
+		dialogSearch(action, payload, w)
 	default:
 		log.Println(action.CallbackID)
 	}
@@ -132,6 +139,37 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", true, token)
 		return
 	}
+	lookUpBook(responseURL, token, userID, userName, queryText)
+}
+
+func dialogSearch(action action, body string, w http.ResponseWriter) {
+	_, token, _, err := getSlackAuth(action.Team.ID)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
+
+	log.Println(action.Submission)
+	log.Println(action)
+	//err = json.Unmarshal(action.Submission, &submission)
+	if err != nil {
+		responseError(action.ResponseURL, err.Error(), token)
+		return
+	}
+
+	w.WriteHeader(200)
+
+	var queryText string
+	if len(strings.TrimSpace(action.Submission["searchtext"])) > 0 {
+		queryText = action.Submission["searchtext"]
+	} else {
+		queryText = action.Submission["selecttitle"]
+	}
+
+	lookUpBook(action.ResponseURL, token, action.User.ID, action.User.Name, queryText)
+}
+
+func lookUpBook(responseURL, token, userID, userName, queryText string) {
 	go simpleResponse(responseURL, "Looking up your book", true, token)
 
 	values := wrongBookButtonValues{
@@ -142,7 +180,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		UserName:    userName,
 	}
 
-	params, err := createBookPost(values, true)
+	params, err := createBookPost(values, true, true)
 	if err != nil {
 		if err.Error() == "no books found" {
 			simpleResponse(responseURL, "No books found, try a broader search", false, token)
@@ -163,14 +201,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func checkTextForBook(message eventMessage) {
-	tokenized := strings.Split(message.Event.Text, "_")
-	if len(tokenized) < 2 {
-		return
-	}
-	queryText := tokenized[1]
-	channel := message.Event.Channel
-	teamID := message.TeamID
+func CheckTextForBook(queryText string, teamID string, channel string, user string) {
 	_, token, authedChannel, err := getSlackAuth(teamID)
 	if err != nil || channel != authedChannel {
 		if err != nil {
@@ -181,13 +212,13 @@ func checkTextForBook(message eventMessage) {
 		return
 	}
 	values := wrongBookButtonValues{
-		User:        message.Event.User,
+		User:        user,
 		Query:       queryText,
 		Index:       0,
 		IsEphemeral: false,
 		UserName:    "booky user",
 	}
-	params, err := createBookPost(values, true)
+	params, err := createBookPost(values, true, true)
 	if err != nil {
 		log.Output(0, err.Error())
 		return

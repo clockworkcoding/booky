@@ -21,6 +21,7 @@ type eventMessage struct {
 	AuthedUsers []string        `json:"authed_users"`
 	EventID     string          `json:"event_id"`
 	EventTime   json.RawMessage `json:"event_time"`
+	TriggerID   string          `json:"trigger_id"`
 }
 
 type eventLinkShared struct {
@@ -49,6 +50,11 @@ type challenge struct {
 	Type      string `json:"type"`
 }
 
+type searchDialogSubmission struct {
+	SearchText  string `json:"searchtext"`
+	SelectTitle string `json:"selecttitle"`
+}
+
 type action struct {
 	Actions []struct {
 		Name            string `json:"name"`
@@ -71,11 +77,20 @@ type action struct {
 		ID   string `json:"id"`
 		Name string `json:"name"`
 	} `json:"user"`
-	ActionTs        string          `json:"action_ts"`
-	MessageTs       string          `json:"message_ts"`
-	AttachmentID    string          `json:"attachment_id"`
-	Token           string          `json:"token"`
-	IsAppUnfurl     bool            `json:"is_app_unfurl"`
-	OriginalMessage json.RawMessage `json:"original_message"`
-	ResponseURL     string          `json:"response_url"`
+	Message struct {
+		Type string `json:"type"`
+		User string `json:"user"`
+		Ts   string `json:"ts"`
+		Text string `json:"text"`
+	} `json:"message"`
+
+	Submission      map[string]string `json:"submission"`
+	ActionTs        string            `json:"action_ts"`
+	MessageTs       string            `json:"message_ts"`
+	AttachmentID    string            `json:"attachment_id"`
+	Token           string            `json:"token"`
+	IsAppUnfurl     bool              `json:"is_app_unfurl"`
+	OriginalMessage json.RawMessage   `json:"original_message"`
+	ResponseURL     string            `json:"response_url"`
+	TriggerID       string            `json:"trigger_id"`
 }
