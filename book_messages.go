@@ -141,7 +141,6 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		}
 		odValue := book.Book_title[0].Text + " " + book.Book_authors[0].Book_author[0].Book_name.Text
 		odValue = strings.Replace(odValue, ".", " ", -1)
-		log.Printf("Book: %#v", book)
 		buttons := slack.Attachment{
 			Actions: []slack.AttachmentAction{
 
@@ -296,13 +295,11 @@ func menuSearch(action action) {
 		Elements:       elements,
 	}
 
-	log.Println(0, "start method: ", lookUpDialog)
 	err = api.PostDialog(action.TriggerID, token, lookUpDialog)
 	if err != nil {
 		log.Println(0, err.Error())
 		return
 	}
-	log.Println(0, "no error: ", lookUpDialog)
 }
 
 func findTitleOptions(text string, sep string) (options []slack.DialogOption) {

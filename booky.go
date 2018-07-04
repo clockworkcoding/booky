@@ -323,6 +323,7 @@ func readConfig() Configuration {
 		configuration.Keys.Key1 = os.Getenv("KEY_1")
 		configuration.Keys.Key2 = os.Getenv("KEY_2")
 		configuration.RedisURL = os.Getenv("REDIS_URL")
+		configuration.Patreon = os.Getenv("patreon")
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)
