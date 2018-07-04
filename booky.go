@@ -12,6 +12,7 @@ import (
 
 	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
+	"strconv"
 )
 
 var (
@@ -112,7 +113,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 		menuSearch(action)
 	case "lookUpDialog":
 		log.Println(action)
-		dialogSearch(action, payload, w)
+		dialogSearch(action, w)
 	default:
 		log.Println(action.CallbackID)
 	}
@@ -142,7 +143,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	lookUpBook(responseURL, token, userID, userName, queryText)
 }
 
-func dialogSearch(action action, body string, w http.ResponseWriter) {
+func dialogSearch(action action, w http.ResponseWriter) {
 	_, token, _, err := getSlackAuth(action.Team.ID)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
@@ -254,10 +255,12 @@ type Configuration struct {
 		Key1 string `json:"Key1"`
 		Key2 string `json:"Key2"`
 	} `json:"Keys"`
-	RedisURL    string `json:"RedisURL"`
-	URL         string `json:"URL"`
-	BitlyKey    string `json:"BitlyKey"`
-	RedirectURL string `json:"RedirectURL"`
+	RedisURL          string `json:"RedisURL"`
+	URL               string `json:"URL"`
+	BitlyKey          string `json:"BitlyKey"`
+	RedirectURL       string `json:"RedirectURL"`
+	Patreon           string `json:"patreon"`
+	DescriptionLength int    `json:"description_length"`
 }
 
 func main() {
@@ -309,6 +312,7 @@ func readConfig() Configuration {
 	configuration := Configuration{}
 
 	if configuration.Slack.ClientID = os.Getenv("SLACK_CLIENT_ID"); configuration.Slack.ClientID != "" {
+		var err error
 		configuration.Slack.ClientSecret = os.Getenv("SLACK_CLIENT_SECRET")
 		configuration.Goodreads.Secret = os.Getenv("GOODREADS_SECRET")
 		configuration.Goodreads.Key = os.Getenv("GOODREADS_KEY")
@@ -322,6 +326,11 @@ func readConfig() Configuration {
 		configuration.Keys.Key1 = os.Getenv("KEY_1")
 		configuration.Keys.Key2 = os.Getenv("KEY_2")
 		configuration.RedisURL = os.Getenv("REDIS_URL")
+		configuration.Patreon = os.Getenv("patreon")
+		configuration.DescriptionLength, err = strconv.Atoi(os.Getenv("description_length"))
+		if err != nil {
+			configuration.DescriptionLength = 140
+		}
 	} else {
 		file, _ := os.Open("conf.json")
 		decoder := json.NewDecoder(file)

@@ -30,6 +30,11 @@ func friendsCommand(w http.ResponseWriter, r *http.Request) {
 	}
 	go simpleResponse(responseURL, "Getting things ready", true, token)
 
+	patreonText := ""
+	if len(config.Patreon) > 0 {
+		patreonText = " | " + config.Patreon
+	}
+
 	attachments := []slack.Attachment{
 		slack.Attachment{
 			Title:      "Become friends on Goodreads",
@@ -38,7 +43,7 @@ func friendsCommand(w http.ResponseWriter, r *http.Request) {
 			ThumbURL:   "https://s.gr-assets.com/assets/icons/goodreads_icon_100x100-4a7d81b31d932cfc0be621ee15a14e70.png",
 			CallbackID: "friendAction",
 			Fallback:   "Something went wrong, try again later",
-			Footer:     "Goodreads will show the name, email, and books associated with your Goodreads account to anybody you add as a friend. | patreon.com/gobooky",
+			Footer:     "Goodreads will show the name, email, and books associated with your Goodreads account to anybody you add as a friend." + patreonText,
 			Actions: []slack.AttachmentAction{
 
 				slack.AttachmentAction{
