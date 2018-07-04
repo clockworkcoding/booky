@@ -164,7 +164,12 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 
 		attachments = append(attachments, buttons)
 	}
-	if !showFullDescription && len(attachments[1].Text) > 143 {
+
+	maxLength := 140
+	if config.DescriptionLength > 0 {
+		maxLength = config.DescriptionLength
+	}
+	if !showFullDescription && len(attachments[1].Text) > maxLength+3 {
 		attachments[2].Actions = append(attachments[2].Actions,
 			slack.AttachmentAction{
 				Name:  "fullDescription",
@@ -172,7 +177,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 				Type:  "button",
 				Value: values.encodeValues(),
 			})
-		attachments[1].Text = attachments[1].Text[:140] + "..."
+		attachments[1].Text = attachments[1].Text[:maxLength] + "..."
 	}
 	params = slack.NewPostMessageParameters()
 	params.Text = book.Book_title[0].Text
