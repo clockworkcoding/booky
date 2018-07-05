@@ -237,6 +237,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func menuSearch(action action) {
+	log.Println("Menu Search", "\n", action)
 	_, token, _, err := getSlackAuth(action.Team.ID)
 	api := slack.New(token)
 	if len(strings.Split(action.Message.Text, " ")) == 1 {
@@ -299,6 +300,7 @@ func menuSearch(action action) {
 		Title:          "Look up from post",
 		Elements:       elements,
 	}
+	log.Println("Menu Search", "\n", lookUpDialog)
 
 	err = api.PostDialog(action.TriggerID, token, lookUpDialog)
 	if err != nil {
@@ -368,7 +370,7 @@ func wrongBookButton(action action, token string) {
 	}
 
 	api := slack.New(token)
-	if action.User.ID != values.User {
+	if action.User.ID != values.User && action.Actions[0].Name != "fullDescription" {
 		responseParams := slack.NewResponseMessageParameters()
 		responseParams.ResponseType = "ephemeral"
 		responseParams.ReplaceOriginal = false
