@@ -282,7 +282,7 @@ func menuSearch(action action) {
 			Type:     "select",
 			Name:     "selecttitle",
 			Options:  options,
-			Optional: true,
+			Optional: false,
 			Value:    options[0].Value,
 		})
 	} else {
@@ -291,7 +291,7 @@ func menuSearch(action action) {
 			Type:     "text",
 			Name:     "searchtext",
 			Hint:     "booky can't find a title in the post, but you can search for one here",
-			Optional: true,
+			Optional: false,
 		})
 	}
 
