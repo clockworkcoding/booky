@@ -10,9 +10,10 @@ import (
 	"strings"
 	"time"
 
+	"strconv"
+
 	"github.com/clockworkcoding/slack"
 	_ "github.com/lib/pq"
-	"strconv"
 )
 
 var (
@@ -202,7 +203,7 @@ func lookUpBook(responseURL, token, userID, userName, queryText string) {
 	}
 }
 
-func CheckTextForBook(queryText string, teamID string, channel string, user string) {
+func checkTextForBook(queryText string, teamID string, channel string, user string) {
 	_, token, authedChannel, err := getSlackAuth(teamID)
 	if err != nil || channel != authedChannel {
 		if err != nil {

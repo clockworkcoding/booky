@@ -226,7 +226,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 		channel := message.Event.Channel
 		teamID := message.TeamID
 		user := message.Event.User
-		CheckTextForBook(queryText, teamID, channel, user)
+		checkTextForBook(queryText, teamID, channel, user)
 	case "link_shared":
 		var link eventLinkShared
 		err := json.Unmarshal(event, &link)
@@ -282,16 +282,18 @@ func menuSearch(action action) {
 			Type:     "select",
 			Name:     "selecttitle",
 			Options:  options,
-			Optional: true,
+			Optional: false,
+			Value:    options[0].Value,
+		})
+	} else {
+		elements = append(elements, slack.DialogElement{
+			Label:    "Custom Search",
+			Type:     "text",
+			Name:     "searchtext",
+			Hint:     "booky can't find a title in the post, but you can search for one here",
+			Optional: false,
 		})
 	}
-	elements = append(elements, slack.DialogElement{
-		Label:    "Custom Search",
-		Type:     "text",
-		Name:     "searchtext",
-		Hint:     "If booky can't find a title in the post, you can search for one here",
-		Optional: true,
-	})
 
 	lookUpDialog := slack.Dialog{
 		CallbackID:     "lookUpDialog",
