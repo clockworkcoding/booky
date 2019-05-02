@@ -41,6 +41,10 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 
 	var authorBuffer bytes.Buffer
 	for i, author := range book.Book_authors[0].Book_author {
+		if i > 4 {
+			authorBuffer.WriteString("...")
+			break
+		}
 		if i > 0 {
 			authorBuffer.WriteString(" | ")
 		}
