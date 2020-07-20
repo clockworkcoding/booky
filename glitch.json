@@ -1,21 +1,10 @@
 {
-  "install": "sh ./install.sh",
-  "start": "racket/bin/racket rantstack.scm",
+  "install": "go build",
+  "start": "./booky",
   "watch": {
-    "install": {
-      "include": [
-        "^glitch\\.json$",
-        "^install\\.sh$",
-        "^\\.env$"
-      ]
-    },
     "restart": {
-      "exclude": [
-        "^racket/"
-      ],
       "include": [
-        "\\.rkt$",
-        "\\.scm$"
+        "booky"
       ]
     },
     "throttle": 1000
