@@ -200,8 +200,12 @@ func event(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if v["type"].(string) == "url_verification" {
+		w.Write([]byte(v["challenge"].(string)))
+		return
+	}
 	if v["token"].(string) != config.Slack.VerificationToken {
-		writeError(w, http.StatusForbidden, "Forbidden" + v["token" ])
+    writeError(w, http.StatusForbidden, "Forbidden: verification failed" )
 		return
 	}
 	w.WriteHeader(http.StatusOK)
