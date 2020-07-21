@@ -201,7 +201,7 @@ func event(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if v["token"].(string) != config.Slack.VerificationToken {
-		writeError(w, http.StatusForbidden, "Forbidden")
+		writeError(w, http.StatusForbidden, "Forbidden" + v["token" ])
 		return
 	}
 	w.WriteHeader(http.StatusOK)
