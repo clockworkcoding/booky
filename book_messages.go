@@ -19,6 +19,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	if values.bookID == "" {
 		results, err := gr.GetSearch(values.Query)
+    log.Output(0, "hi")
 		if err != nil {
 			fmt.Println(err.Error())
 			return params, err
@@ -373,6 +374,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 func wrongBookButton(action action, token string) {
 
 	var values wrongBookButtonValues
+  log.Output(0, action.Actions[0].Value)
 	err := values.decodeValues(action.Actions[0].Value)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
