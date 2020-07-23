@@ -16,12 +16,13 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
-  l  og.Output(0, "auth? " + errStr)
+    log.Output(0, "auth error " + errStr)
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
+	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "https://clockworkcoding-booky.glitch.me/auth", false)
 	if err != nil {
+    log.Output(0, "auth error: " + err.Error())
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
@@ -46,9 +47,9 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"links:read", "links:write", "chat:write:bot", "commands"},
+		Scopes:       []string{"links:read", "links:write", "commands"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://slack.com/oauth/authorize",
+			AuthURL:  "https://slack.com/oauth/v2/authorize",
 			TokenURL: "https://slack.com/api/oauth.access", // not actually used here
 		},
 	}
