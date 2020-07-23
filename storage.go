@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"log"
 	"fmt"
 	"net/url"
 	"strings"
@@ -140,6 +141,7 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
 	rows, err := db.Query("SELECT id, token, channelid FROM slack_auth WHERE teamid = $1 ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID)
 	if err != nil {
+		log.Output(0, fmt.Sprintf("Storage Err: %s", err.Error()))
 		return
 	}
 	defer rows.Close()

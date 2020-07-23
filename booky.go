@@ -129,7 +129,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 	responseURL := r.FormValue("response_url")
 	_, token, _, err := getSlackAuth(teamID)
 	if err != nil {
-		writeError(w, http.StatusUnauthorized, "Unauthorized. Expected: " + config.Slack.VerificationToken + " Received: " + action.Token) 
+		writeError(w, http.StatusUnauthorized, err.Error())
 		return
 	}
 	if queryText == "-friends" {
