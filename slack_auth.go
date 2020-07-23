@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"net/http"
-
+  "log"
 	"golang.org/x/oauth2"
 
 	"github.com/clockworkcoding/slack"
@@ -16,6 +16,7 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
+  l  og.Output(0, "auth? " + errStr)
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
