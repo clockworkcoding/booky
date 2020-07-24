@@ -3,7 +3,7 @@ package main
 import (
 	"crypto/rand"
 	"net/http"
-
+  "log"
 	"golang.org/x/oauth2"
 
 	"github.com/clockworkcoding/slack"
@@ -16,11 +16,13 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
+    log.Output(0, "auth error " + errStr)
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-	oAuthResponse, err := slack.GetOAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
+	oAuthResponse, err := slack.GetV2OAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
 	if err != nil {
+    log.Output(0, "auth error: " + err.Error())
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
@@ -45,10 +47,10 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 	conf := &oauth2.Config{
 		ClientID:     config.Slack.ClientID,
 		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"links:read", "links:write", "chat:write:bot", "commands"},
+		Scopes:       []string{"links:read", "links:write", "commands"},
 		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://slack.com/oauth/authorize",
-			TokenURL: "https://slack.com/api/oauth.access", // not actually used here
+			AuthURL:  "https://slack.com/oauth/v2/authorize",
+			TokenURL: "https://slack.com/api/oauth.v2.access", // not actually used here
 		},
 	}
 	url := conf.AuthCodeURL(globalState.auth)

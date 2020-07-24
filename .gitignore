@@ -2,11 +2,13 @@
 *.o
 *.a
 *.so
+booky
 
 # Folders
 _obj
 _test
 _idea
+go
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -23,5 +25,6 @@ _testmain.go
 *.exe
 *.test
 *.prof
+.env
 
 conf.json

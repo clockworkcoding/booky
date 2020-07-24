@@ -1,0 +1,12 @@
+{
+  "install": "go build",
+  "start": "./booky",
+  "watch": {
+    "restart": {
+      "include": [
+        "*.go"
+      ]
+    },
+    "throttle": 1000
+  }
+}

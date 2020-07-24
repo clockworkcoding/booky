@@ -200,8 +200,12 @@ func event(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err.Error())
 		return
 	}
+	if v["type"].(string) == "url_verification" {
+		w.Write([]byte(v["challenge"].(string)))
+		return
+	}
 	if v["token"].(string) != config.Slack.VerificationToken {
-		writeError(w, http.StatusForbidden, "Forbidden")
+    writeError(w, http.StatusForbidden, "Forbidden: verification failed" )
 		return
 	}
 	w.WriteHeader(http.StatusOK)
@@ -369,6 +373,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 func wrongBookButton(action action, token string) {
 
 	var values wrongBookButtonValues
+  log.Output(0, action.Actions[0].Value)
 	err := values.decodeValues(action.Actions[0].Value)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
@@ -486,7 +491,8 @@ type wrongBookButtonValues struct {
 }
 
 func (values *wrongBookButtonValues) encodeValues() string {
-	return fmt.Sprintf("%v|+|%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User, values.UserName)
+  valueString := fmt.Sprintf("%v|+|%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User, values.UserName)
+	return valueString
 }
 func (values *wrongBookButtonValues) decodeValues(valueString string) (err error) {
 	valueStrings := strings.Split(valueString, "|+|")

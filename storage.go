@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"log"
 	"fmt"
 	"net/url"
 	"strings"
@@ -103,7 +104,7 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 	return
 }
 
-func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
+func saveSlackAuth(oAuth *slack.V2OAuthResponse) (err error) {
 
 	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS slack_auth (
 		id serial,
@@ -128,8 +129,8 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 		channel ,
 		channelid,
 		createdtime	)
-		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.TeamName, oAuth.TeamID,
-		oAuth.AccessToken, oAuth.IncomingWebhook.URL, oAuth.IncomingWebhook.ConfigurationURL, oAuth.IncomingWebhook.Channel, oAuth.IncomingWebhook.ChannelID); err != nil {
+		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.Team.Name, oAuth.Team.ID,
+		"", "", "", "", ""); err != nil {
 		fmt.Println("Error saving slack auth: " + err.Error())
 		return
 	}
@@ -140,6 +141,7 @@ func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
 func getSlackAuth(teamID string) (id int, token, channelid string, err error) {
 	rows, err := db.Query("SELECT id, token, channelid FROM slack_auth WHERE teamid = $1 ORDER BY createdtime DESC FETCH FIRST 1 ROWS ONLY", teamID)
 	if err != nil {
+		log.Output(0, fmt.Sprintf("Storage Err: %s", err.Error()))
 		return
 	}
 	defer rows.Close()
