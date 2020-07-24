@@ -72,7 +72,7 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	if action.Token == config.Slack.VerificationToken {
 		w.WriteHeader(http.StatusOK)
 	} else {
-    writeError(w, http.StatusUnauthorized, "Unauthorized. Expected: " + config.Slack.VerificationToken + " Received: " + action.Token)
+		writeError(w, http.StatusUnauthorized, "Unauthorized. Expected: "+config.Slack.VerificationToken+" Received: "+action.Token)
 		return
 	}
 	_, token, _, err := getSlackAuth(action.Team.ID)

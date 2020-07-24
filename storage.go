@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"errors"
-	"log"
 	"fmt"
+	"log"
 	"net/url"
 	"strings"
 	"time"
