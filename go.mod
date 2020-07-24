@@ -1,6 +1,6 @@
 module github.com/clockworkcoding/booky
 
-go 1.14
+go 1.11
 
 require (
 	github.com/DDRBoxman/go-amazon-product-api v0.0.0-20170107024513-3e88f3c8fd4f
