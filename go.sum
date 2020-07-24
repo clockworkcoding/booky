@@ -14,6 +14,8 @@ github.com/clockworkcoding/slack v0.0.2-0.20200723153319-f09437b2153f h1:M4jACVA
 github.com/clockworkcoding/slack v0.0.2-0.20200723153319-f09437b2153f/go.mod h1:hROCLs2s6ixm/kGgh41GXzFWtI4+94kjP7s0orXFsz4=
 github.com/clockworkcoding/slack v0.0.2-0.20200724033606-c0052397ba99 h1:64Goku2NAWFbfTAT8dN7D65c6bJA1XLr/uB0fUFWTb8=
 github.com/clockworkcoding/slack v0.0.2-0.20200724033606-c0052397ba99/go.mod h1:hROCLs2s6ixm/kGgh41GXzFWtI4+94kjP7s0orXFsz4=
+github.com/clockworkcoding/slack v0.0.4 h1:5wU3QFmnY9GAIZMn0ZYTDx+wWD+NriopBklPoJfxUuM=
+github.com/clockworkcoding/slack v0.0.4/go.mod h1:hROCLs2s6ixm/kGgh41GXzFWtI4+94kjP7s0orXFsz4=
 github.com/go-redis/redis v0.0.0-20170925100742-83513b5140f1 h1:25Eo2BT8sliZ4k8/9VO4aovSy2hYc73kSlJFUwKhgpc=
 github.com/go-redis/redis v0.0.0-20170925100742-83513b5140f1/go.mod h1:NAIEuMOZ/fxfXJIrKDQDz8wamY7mA7PouImQ2Jvg6kA=
 github.com/gorilla/context v1.1.1/go.mod h1:kBGZzfjB9CEq2AlWe17Uuf7NDRt0dE0s8S51q0aT7Yg=
