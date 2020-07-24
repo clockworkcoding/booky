@@ -18,9 +18,7 @@ import (
 func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFullDescription bool) (params slack.PostMessageParameters, err error) {
 	gr := goodreads.NewClient(config.Goodreads.Key, config.Goodreads.Secret)
 	if values.bookID == "" {
-    log.Output(0, "oh")
 		results, err := gr.GetSearch(values.Query)
-    log.Output(0, "hi")
 		if err != nil {
 			fmt.Println(err.Error())
 			return params, err
@@ -494,11 +492,9 @@ type wrongBookButtonValues struct {
 
 func (values *wrongBookButtonValues) encodeValues() string {
   valueString := fmt.Sprintf("%v|+|%v|+|%v|+|%v|+|%v", values.Index, values.IsEphemeral, values.Query, values.User, values.UserName)
-  log.Output(0, "values: " + valueString)
 	return valueString
 }
 func (values *wrongBookButtonValues) decodeValues(valueString string) (err error) {
-  log.Output(0, "values: " + valueString)
 	valueStrings := strings.Split(valueString, "|+|")
 	if len(valueStrings) < 5 {
 		err = errors.New("not enough values")
