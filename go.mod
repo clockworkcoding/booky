@@ -1,6 +1,6 @@
 module github.com/clockworkcoding/booky
 
-go 1.11
+go 1.12
 
 require (
 	github.com/DDRBoxman/go-amazon-product-api v0.0.0-20170107024513-3e88f3c8fd4f
@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/context v1.1.1
 	github.com/lib/pq v0.0.0-20170324204654-2704adc878c2
 	github.com/mrjones/oauth v0.0.0-20170225175752-3f67d9c27435
-	golang.org/x/net v0.0.0-20170308210134-a6577fac2d73
+	golang.org/x/net v0.0.0-20190603091049-60506f45cf65
 	golang.org/x/oauth2 v0.0.0-20170321013421-7fdf09982454
+	google.golang.org/appengine v1.6.6 // indirect
 )
