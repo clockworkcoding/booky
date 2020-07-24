@@ -4,6 +4,7 @@
   "watch": {
     "restart": {
       "include": [
+        "*.go"
       ]
     },
     "throttle": 1000

@@ -20,7 +20,7 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-	oAuthResponse, err := slack.GetV2OAuthResponseContext(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
+	oAuthResponse, err := slack.GetV2OAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
 	if err != nil {
     log.Output(0, "auth error: " + err.Error())
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)

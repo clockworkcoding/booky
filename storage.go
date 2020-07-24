@@ -104,7 +104,7 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 	return
 }
 
-func saveSlackAuth(oAuth *slack.OAuthV2Response) (err error) {
+func saveSlackAuth(oAuth *slack.V2OAuthResponse) (err error) {
 
 	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS slack_auth (
 		id serial,
@@ -129,8 +129,8 @@ func saveSlackAuth(oAuth *slack.OAuthV2Response) (err error) {
 		channel ,
 		channelid,
 		createdtime	)
-		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.TeamName, oAuth.TeamID,
-		oAuth.AccessToken, oAuth.IncomingWebhook.URL, oAuth.IncomingWebhook.ConfigurationURL, oAuth.IncomingWebhook.Channel, oAuth.IncomingWebhook.ChannelID); err != nil {
+		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.Team.Name, oAuth.Team.ID,
+		"", "", "", "", ""); err != nil {
 		fmt.Println("Error saving slack auth: " + err.Error())
 		return
 	}
