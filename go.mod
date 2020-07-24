@@ -5,7 +5,7 @@ require (
 	github.com/campoy/apiai v0.0.0-20170906221302-17266d8ce708
 	github.com/clockworkcoding/goodreads v0.0.0-20171209172042-dc565c48f23a
 	github.com/clockworkcoding/goverdrive v0.0.0-20170713222943-d47bbb2f0ee0
-	github.com/clockworkcoding/slack v0.0.0-20180630165941-ad6abbc690d7
+	github.com/clockworkcoding/slack v0.0.2-0.20200723153319-f09437b2153f
 	github.com/go-redis/redis v0.0.0-20170925100742-83513b5140f1
 	github.com/gorilla/context v1.1.1
 	github.com/lib/pq v0.0.0-20170324204654-2704adc878c2

@@ -104,7 +104,7 @@ func saveGoodreadsAuth(param goodreadsAuth) (err error) {
 	return
 }
 
-func saveSlackAuth(oAuth *slack.OAuthResponse) (err error) {
+func saveSlackAuth(oAuth *slack.OAuthV2Response) (err error) {
 
 	if _, err = db.Exec(`CREATE TABLE IF NOT EXISTS slack_auth (
 		id serial,
