@@ -1,6 +1,6 @@
 {
   "install": "go build",
-  "start": "./booky",
+  "start": "go run .",
   "watch": {
     "restart": {
       "include": [
