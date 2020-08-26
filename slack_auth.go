@@ -2,8 +2,9 @@ package main
 
 import (
 	"crypto/rand"
+	"log"
 	"net/http"
-  "log"
+
 	"golang.org/x/oauth2"
 
 	"github.com/clockworkcoding/slack"
@@ -16,13 +17,13 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.FormValue("code")
 	errStr := r.FormValue("error")
 	if errStr != "" {
-    log.Output(0, "auth error " + errStr)
+		log.Output(0, "auth error "+errStr)
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
 	oAuthResponse, err := slack.GetV2OAuthResponse(config.Slack.ClientID, config.Slack.ClientSecret, code, "", false)
 	if err != nil {
-    log.Output(0, "auth error: " + err.Error())
+		log.Output(0, "auth error: "+err.Error())
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
