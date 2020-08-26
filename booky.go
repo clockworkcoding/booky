@@ -137,7 +137,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(""))
-	if queryText == "?" {
+	if queryText == "?" || queryText == "help"  {
 		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", true, token)
 		return
 	}
