@@ -78,6 +78,7 @@ func getTitleLink(title string) (link string) {
 		log.Println(resp.StatusCode)
 		return
 	}
+  log.Println("loc: " + resp.Header)
 	link = titleURL + "?aid=" + config.BookshopID
 	return
 }
