@@ -69,9 +69,13 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		patreonText = " | " + config.Patreon
 	}
 
+	postedByText := ""
+	if len(values.UserName) > 0 {
+		postedByText = "Posted by " + values.UserName + " using /booky | "
+	}
 	bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, book.Book_work[0].Book_original_title.Text)
 	if len(bookshopLink) > 0 {
-    bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiliate disclosure>)"
+		bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiliate disclosure>)"
 	}
 
 	attachments := []slack.Attachment{
@@ -96,7 +100,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com%s%s", values.UserName, patreonText, bookshopLink),
+			Footer:     fmt.Sprintf("%sData from Goodreads.com%s%s", postedByText, patreonText, bookshopLink),
 		},
 	}
 	if wrongBookButtons {
@@ -341,6 +345,7 @@ func findTitleOptions(text string, sep string) (options []slack.DialogOption) {
 
 func generateGoodreadsLinks(link eventLinkShared) {
 
+	log.Println(link.Event.Links[0].URL)
 	if !strings.Contains(link.Event.Links[0].URL, "book/show/") {
 		return
 	}
@@ -359,7 +364,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	post.Attachments[0].Text = post.Attachments[1].Text
 	post.Attachments[0].Actions = post.Attachments[2].Actions
 	post.Attachments[0].CallbackID = post.Attachments[2].CallbackID
-	post.Attachments[0].Footer = post.Attachments[2].Footer
+	post.Attachments[0].Footer = post.Attachments[1].Footer
 
 	api := slack.New(token)
 	params := slack.UnfurlParameters{
@@ -371,7 +376,11 @@ func generateGoodreadsLinks(link eventLinkShared) {
 			},
 		},
 	}
-	api.Unfurl(context.Background(), link.Event.Channel, params)
+	err = api.Unfurl(context.Background(), link.Event.Channel, params)
+	if err != nil {
+		log.Println("Error unfurling link: " + err.Error())
+		return
+	}
 }
 func wrongBookButton(action action, token string) {
 

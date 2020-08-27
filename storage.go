@@ -129,8 +129,8 @@ func saveSlackAuth(oAuth *slack.V2OAuthResponse) (err error) {
 		channel ,
 		channelid,
 		createdtime	)
-		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.Team.Name, oAuth.Team.ID,
-		"", "", "", "", ""); err != nil {
+		VALUES ($1,$2,$3,$4,$5,$6,$7, now())`, oAuth.Team.Name, oAuth.Team.ID, oAuth.AccessToken, oAuth.AuthedUser.AccessToken,
+		"", "", ""); err != nil {
 		fmt.Println("Error saving slack auth: " + err.Error())
 		return
 	}
