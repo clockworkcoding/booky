@@ -11,7 +11,10 @@ import (
 
 const bookshopURL = "https://bookshop.org/"
 
-func getBookshopLink(isbn string, title string) (link string) {
+func getBookshopLink(isbn string, titles []string) (link string) {
+	//log.Println("isbn: " + isbn)
+	//log.Println(titles)
+
 	if config.BookshopID == "" {
 		return
 	}
@@ -19,8 +22,10 @@ func getBookshopLink(isbn string, title string) (link string) {
 	if isbn != "" {
 		link = getIsbnLink(isbn)
 	}
-	if link == "" && title != "" {
-		link = getTitleLink(title)
+	for _, title := range titles {
+		if link == "" && title != "" && config.BookshopFallback == "true" {
+			link = getTitleLink(title)
+		} 
 	}
 
 	return
@@ -44,7 +49,7 @@ func getIsbnLink(isbn string) (link string) {
 	}
 
 	if resp.StatusCode != 200 {
-		log.Println(resp.StatusCode)
+		//log.Println(resp.StatusCode)
 		return
 	}
 	link = isbnURL
@@ -61,6 +66,9 @@ func getTitleLink(title string) (link string) {
 	}
 	client := &http.Client{
 		Timeout: time.Second * 10,
+    CheckRedirect: func(req *http.Request, via []*http.Request) error {
+        return http.ErrUseLastResponse
+    },
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -68,11 +76,13 @@ func getTitleLink(title string) (link string) {
 		return
 	}
 
-	if resp.StatusCode != 200 {
-		log.Println(resp.StatusCode)
+	if resp.StatusCode != 302 {
+		//log.Println(resp.StatusCode)
 		return
 	}
-	link = titleURL + "?aid=" + config.BookshopID
+  urlParts := strings.Split(resp.Header.Get("location"), "/")
+  isbn := urlParts[len(urlParts)-1]
+  link = getIsbnLink(isbn)
 	return
 }
 
@@ -84,7 +94,10 @@ func formatTitle(title string) (linkTitle string) {
 		} else {
 			sb.WriteRune('-')
 		}
-
 	}
-	return sb.String()
+	linkTitle = sb.String()
+	for strings.Contains(linkTitle, "--") {
+		linkTitle = strings.Replace(linkTitle, "--", "-", -1)
+	}
+	return
 }
