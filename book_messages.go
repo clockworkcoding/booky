@@ -372,7 +372,11 @@ func generateGoodreadsLinks(link eventLinkShared) {
 			},
 		},
 	}
-	api.Unfurl(context.Background(), link.Event.Channel, params)
+  err = api.Unfurl(context.Background(), link.Event.Channel, params)
+	if err != nil {
+    log.Println("Error unfurling link: " + err.Error())
+		return
+	}
 }
 func wrongBookButton(action action, token string) {
 
