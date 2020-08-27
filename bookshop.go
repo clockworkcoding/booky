@@ -17,6 +17,8 @@ func getBookshopLink(title string) (link string) {
 	}
 	bookURL := bookshopURL + url.QueryEscape(formatTitle(title))
 
+  log.Println(title)
+  log.Println(bookURL)
 	// Build the request
 	req, err := http.NewRequest("GET", bookURL, nil)
 	if err != nil {
@@ -33,6 +35,7 @@ func getBookshopLink(title string) (link string) {
 	}
 
 	if resp.StatusCode != 200 {
+    log.Println(resp.StatusCode)
 		return
 	}
 	link = bookURL + "?aid=" + config.BookshopID
@@ -47,6 +50,7 @@ func formatTitle(title string) (linkTitle string) {
 		} else {
 			sb.WriteRune('-')
 		}
+    
 	}
 	return sb.String()
 }
