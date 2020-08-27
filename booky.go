@@ -259,7 +259,7 @@ type Configuration struct {
 	RedisURL          string `json:"RedisURL"`
 	URL               string `json:"URL"`
 	BitlyKey          string `json:"BitlyKey"`
-	BookshopID        string `json:BookshopId`
+	BookshopID        string `json:"BookshopId"`
 	RedirectURL       string `json:"RedirectURL"`
 	Patreon           string `json:"patreon"`
 	DescriptionLength int    `json:"description_length"`
@@ -324,6 +324,7 @@ func readConfig() Configuration {
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")
 		configuration.BitlyKey = os.Getenv("BITLY_KEY")
+		configuration.BookshopID = os.Getenv("BOOKSHOP_ID")
 		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
 		configuration.Keys.Key1 = os.Getenv("KEY_1")
 		configuration.Keys.Key2 = os.Getenv("KEY_2")
