@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"golang.org/x/oauth2"
-
 	"github.com/clockworkcoding/slack"
 
 	_ "github.com/lib/pq"
@@ -44,16 +42,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 	}
 
-	conf := &oauth2.Config{
-		ClientID:     config.Slack.ClientID,
-		ClientSecret: config.Slack.ClientSecret,
-		Scopes:       []string{"links:read", "links:write", "commands"},
-		Endpoint: oauth2.Endpoint{
-			AuthURL:  "https://slack.com/oauth/v2/authorize",
-			TokenURL: "https://slack.com/api/oauth.v2.access", // not actually used here
-		},
-	}
-	url := conf.AuthCodeURL(globalState.auth)
+	url := "https://slack.com/oauth/v2/authorize?client_id="+config.Slack.ClientID+"&scope=commands&user_scope=links:read,links:write"
 	http.Redirect(w, r, url, http.StatusFound)
 }
 

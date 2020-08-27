@@ -69,6 +69,10 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		patreonText = " | " + config.Patreon
 	}
 
+  postedByText := ""
+  if len(values.UserName) > 0{
+    postedByText = "Posted by "+values.UserName+" using /booky | "
+  }
 	bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, book.Book_work[0].Book_original_title.Text)
 	if len(bookshopLink) > 0 {
     bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiate disclosure>)"
@@ -96,7 +100,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com%s%s", values.UserName, patreonText, bookshopLink),
+			Footer:     fmt.Sprintf("%sData from Goodreads.com%s%s", postedByText, patreonText, bookshopLink),
 		},
 	}
 	if wrongBookButtons {
