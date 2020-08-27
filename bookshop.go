@@ -9,17 +9,40 @@ import (
 	"unicode"
 )
 
-const bookshopURL = "https://bookshop.org/books/"
+const bookshopURL = "https://bookshop.org/"
 
-func getBookshopLink(title string) (link string) {
-	if config.BookshopID == "" {
+func getBookshopLink(isbn string, title string) (link string) {
+  if config.BookshopID == "" || (isbn== "" && title == "") {
 		return
 	}
-	bookURL := bookshopURL + url.QueryEscape(formatTitle(title))
+  
 
   log.Println(title)
+  log.Println(isbn)
   log.Println(bookURL)
 	// Build the request
+  isbnURL := bookshopURL + "a/" + config.BookshopID + "/" + url.QueryEscape(isbn)
+  eq, err := http.NewRequest("GET", bookURL, nil)
+	if err != nil {
+		log.Println("bit.ly error: ", err)
+		return
+	}
+	client := &http.Client{
+		Timeout: time.Second * 10,
+	}
+	resp, err := client.Do(req)
+	if err != nil {
+		log.Println("bookshop query: ", err)
+		return
+	}
+
+	if resp.StatusCode != 200 {
+    log.Println(resp.StatusCode)
+		return
+	}
+	link = bookURL + "?aid=" + config.BookshopID
+
+	titleURL := bookshopURL + "books/" + url.QueryEscape(formatTitle(title))
 	req, err := http.NewRequest("GET", bookURL, nil)
 	if err != nil {
 		log.Println("bit.ly error: ", err)
