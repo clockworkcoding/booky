@@ -360,7 +360,7 @@ func generateGoodreadsLinks(link eventLinkShared) {
 	post.Attachments[0].Text = post.Attachments[1].Text
 	post.Attachments[0].Actions = post.Attachments[2].Actions
 	post.Attachments[0].CallbackID = post.Attachments[2].CallbackID
-	post.Attachments[0].Footer = post.Attachments[2].Footer
+	post.Attachments[0].Footer = post.Attachments[1].Footer
 
 	api := slack.New(token)
 	params := slack.UnfurlParameters{
