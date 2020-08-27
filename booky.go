@@ -257,6 +257,7 @@ type Configuration struct {
 	URL               string `json:"URL"`
 	BitlyKey          string `json:"BitlyKey"`
 	BookshopID        string `json:"BookshopId"`
+  BookshopFallback  string `json:"BookshopFallback"`
 	RedirectURL       string `json:"RedirectURL"`
 	Patreon           string `json:"patreon"`
 	DescriptionLength int    `json:"description_length"`
@@ -322,6 +323,7 @@ func readConfig() Configuration {
 		configuration.URL = os.Getenv("URL")
 		configuration.BitlyKey = os.Getenv("BITLY_KEY")
 		configuration.BookshopID = os.Getenv("BOOKSHOP_ID")
+    configuration.BookshopFallback = os.Getenv("BOOKSHOP_FALLBACK")
 		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
 		configuration.Keys.Key1 = os.Getenv("KEY_1")
 		configuration.Keys.Key2 = os.Getenv("KEY_2")

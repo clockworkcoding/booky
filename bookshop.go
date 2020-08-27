@@ -23,9 +23,9 @@ func getBookshopLink(isbn string, titles []string) (link string) {
 		link = getIsbnLink(isbn)
 	}
 	for _, title := range titles {
-		if link == "" && title != "" {
+		if link == "" && title != "" && config.BookshopFallback == "true" {
 			link = getTitleLink(title)
-		}
+		} 
 	}
 
 	return
@@ -66,9 +66,9 @@ func getTitleLink(title string) (link string) {
 	}
 	client := &http.Client{
 		Timeout: time.Second * 10,
-		CheckRedirect: func(req *http.Request, via []*http.Request) error {
-			return http.ErrUseLastResponse
-		},
+    CheckRedirect: func(req *http.Request, via []*http.Request) error {
+        return http.ErrUseLastResponse
+    },
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -80,9 +80,9 @@ func getTitleLink(title string) (link string) {
 		//log.Println(resp.StatusCode)
 		return
 	}
-	urlParts := strings.Split(resp.Header.Get("location"), "/")
-	isbn := urlParts[len(urlParts)-1]
-	link = getIsbnLink(isbn)
+  urlParts := strings.Split(resp.Header.Get("location"), "/")
+  isbn := urlParts[len(urlParts)-1]
+  link = getIsbnLink(isbn)
 	return
 }
 
