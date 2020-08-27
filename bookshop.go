@@ -12,6 +12,9 @@ import (
 const bookshopURL = "https://bookshop.org/"
 
 func getBookshopLink(isbn string, title string) (link string) {
+  log.Println("isbn: " + isbn)
+  log.Println("title: " + title)
+  
 	if config.BookshopID == "" {
 		return
 	}
