@@ -21,29 +21,45 @@ func getBookshopLink(isbn string, title string) (link string) {
   log.Println(isbn)
   log.Println(bookURL)
 	// Build the request
+  if isbn != ""{
+    link = getIsbnLink(isbn)
+  }
+  if link!= "" && title != "" {
+    link = getTitleLink(title)
+  }
+  
+	return
+}
+
+func getIsbnLink(isbn string) (link string){
+  testIsbnURL := bookshopURL + "a/0/" + url.QueryEscape(isbn)
   isbnURL := bookshopURL + "a/" + config.BookshopID + "/" + url.QueryEscape(isbn)
-  eq, err := http.NewRequest("GET", bookURL, nil)
-	if err != nil {
-		log.Println("bit.ly error: ", err)
-		return
-	}
-	client := &http.Client{
-		Timeout: time.Second * 10,
-	}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Println("bookshop query: ", err)
-		return
-	}
+  req, err := http.NewRequest("GET", testIsbnURL, nil)
+  if err != nil {
+    log.Println("bookshop error : ", err)
+  return
+  }
+  client := &http.Client{
+    Timeout: time.Second * 10,
+  }
+  resp, err := client.Do(req)
+  if err != nil {
+    log.Println("bookshop query: ", err)
+  return
+  }
 
-	if resp.StatusCode != 200 {
+  if resp.StatusCode != 200 {
     log.Println(resp.StatusCode)
-		return
-	}
-	link = bookURL + "?aid=" + config.BookshopID
+  return
+  }
+  link = isbnURL
+  return
+}
 
+func getTitleLink(title string) (link string){
+  
 	titleURL := bookshopURL + "books/" + url.QueryEscape(formatTitle(title))
-	req, err := http.NewRequest("GET", bookURL, nil)
+	req, err := http.NewRequest("GET", titleURL, nil)
 	if err != nil {
 		log.Println("bit.ly error: ", err)
 		return
@@ -61,7 +77,7 @@ func getBookshopLink(isbn string, title string) (link string) {
     log.Println(resp.StatusCode)
 		return
 	}
-	link = bookURL + "?aid=" + config.BookshopID
+	link = titleURL + "?aid=" + config.BookshopID
 	return
 }
 
