@@ -25,9 +25,8 @@ func getBookshopLink(isbn string, titles []string) (link string) {
 	for _, title := range titles {
 		if link == "" && title != "" {
 			link = getTitleLink(title)
-		} else {
-			return
-		}
+      log.Println("Link?:" + link)
+		} 
 	}
 
 	return
