@@ -69,7 +69,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		patreonText = " | " + config.Patreon
 	}
 
-	bookshopLink := getBookshopLink(book.Book_title_without_series.Text)
+	bookshopLink := getBookshopLink(book.Book_work[0].Book_original_title.Text)
 	if len(bookshopLink) > 0 {
 		bookshopLink = " | <" + bookshopLink + "> Support Booky by buying this book through our Bookshop.org affiliate link"
 	}
