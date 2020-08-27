@@ -71,7 +71,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 
 	bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, book.Book_work[0].Book_original_title.Text)
 	if len(bookshopLink) > 0 {
-		bookshopLink = " | <" + bookshopLink + " | Support Booky by buying this book through our Bookshop.org affiliate link>"
+    bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiate disclosure>)"
 	}
 
 	attachments := []slack.Attachment{
