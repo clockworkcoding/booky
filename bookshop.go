@@ -16,10 +16,6 @@ func getBookshopLink(isbn string, title string) (link string) {
 		return
 	}
   
-
-  log.Println(title)
-  log.Println(isbn)
-  
   if isbn != ""{
     link = getIsbnLink(isbn)
   }
@@ -59,7 +55,6 @@ func getIsbnLink(isbn string) (link string){
 func getTitleLink(title string) (link string){
   
 	titleURL := bookshopURL + "books/" + url.QueryEscape(formatTitle(title))
-  log.Println(titleURL)
 	req, err := http.NewRequest("GET", titleURL, nil)
 	if err != nil {
 		log.Println("bookshop error: ", err)
