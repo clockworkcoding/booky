@@ -73,7 +73,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 	if len(values.UserName) > 0 {
 		postedByText = "Posted by " + values.UserName + " using /booky | "
 	}
-	bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, book.Book_work[0].Book_original_title.Text)
+  bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, []string{book.Book_work[0].Book_original_title.Text, book.Book_title_without_series.Text, book.Book_title[0].Text})
 	if len(bookshopLink) > 0 {
 		bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiliate disclosure>)"
 	}

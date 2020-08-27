@@ -11,10 +11,10 @@ import (
 
 const bookshopURL = "https://bookshop.org/"
 
-func getBookshopLink(isbn string, title string) (link string) {
-  log.Println("isbn: " + isbn)
-  log.Println("title: " + title)
-  
+func getBookshopLink(isbn string, titles []string) (link string) {
+	log.Println("isbn: " + isbn)
+	log.Println(titles)
+
 	if config.BookshopID == "" {
 		return
 	}
@@ -22,8 +22,12 @@ func getBookshopLink(isbn string, title string) (link string) {
 	if isbn != "" {
 		link = getIsbnLink(isbn)
 	}
-	if link == "" && title != "" {
-		link = getTitleLink(title)
+	for _, title := range titles {
+		if link == "" && title != "" {
+			link = getTitleLink(title)
+		} else {
+			return
+		}
 	}
 
 	return
@@ -88,9 +92,9 @@ func formatTitle(title string) (linkTitle string) {
 			sb.WriteRune('-')
 		}
 	}
-  linkTitle = sb.String()
-  for(strings.Contains(link, "--")){
-    linkTitle = strings.Replace(linkTitle, "--", "-")
-  }
+	linkTitle = sb.String()
+	for strings.Contains(linkTitle, "--") {
+		linkTitle = strings.Replace(linkTitle, "--", "-", -1)
+	}
 	return
 }
