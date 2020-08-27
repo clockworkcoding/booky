@@ -67,6 +67,9 @@ func getTitleLink(title string) (link string) {
 	}
 	client := &http.Client{
 		Timeout: time.Second * 10,
+    CheckRedirect: func(req *http.Request, via []*http.Request) error {
+        return http.ErrUseLastResponse
+    },
 	}
 	resp, err := client.Do(req)
 	if err != nil {
@@ -74,11 +77,11 @@ func getTitleLink(title string) (link string) {
 		return
 	}
 
-	if resp.StatusCode != 200 {
+	if resp.StatusCode != 302 {
 		log.Println(resp.StatusCode)
 		return
 	}
-  log.Println("loc: " + resp.Header)
+  log.Println(resp.Header.Get("location"))
 	link = titleURL + "?aid=" + config.BookshopID
 	return
 }
