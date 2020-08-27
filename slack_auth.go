@@ -27,7 +27,6 @@ func slackAuth(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 		return
 	}
-
 	http.Redirect(w, r, config.RedirectURL+"/SlackSuccess", http.StatusTemporaryRedirect)
 	if err = saveSlackAuth(oAuthResponse); err != nil {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
