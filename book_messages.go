@@ -69,13 +69,13 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		patreonText = " | " + config.Patreon
 	}
 
-  postedByText := ""
-  if len(values.UserName) > 0{
-    postedByText = "Posted by "+values.UserName+" using /booky | "
-  }
+	postedByText := ""
+	if len(values.UserName) > 0 {
+		postedByText = "Posted by " + values.UserName + " using /booky | "
+	}
 	bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, book.Book_work[0].Book_original_title.Text)
 	if len(bookshopLink) > 0 {
-    bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiate disclosure>)"
+		bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiate disclosure>)"
 	}
 
 	attachments := []slack.Attachment{
@@ -345,7 +345,7 @@ func findTitleOptions(text string, sep string) (options []slack.DialogOption) {
 
 func generateGoodreadsLinks(link eventLinkShared) {
 
-  log.Println(link.Event.Links[0].URL)
+	log.Println(link.Event.Links[0].URL)
 	if !strings.Contains(link.Event.Links[0].URL, "book/show/") {
 		return
 	}
@@ -376,9 +376,9 @@ func generateGoodreadsLinks(link eventLinkShared) {
 			},
 		},
 	}
-  err = api.Unfurl(context.Background(), link.Event.Channel, params)
+	err = api.Unfurl(context.Background(), link.Event.Channel, params)
 	if err != nil {
-    log.Println("Error unfurling link: " + err.Error())
+		log.Println("Error unfurling link: " + err.Error())
 		return
 	}
 }

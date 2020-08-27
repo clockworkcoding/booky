@@ -42,7 +42,7 @@ func addToSlack(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, config.RedirectURL+"/Error", http.StatusTemporaryRedirect)
 	}
 
-	url := "https://slack.com/oauth/v2/authorize?client_id="+config.Slack.ClientID+"&scope=commands&user_scope=links:read,links:write"
+	url := "https://slack.com/oauth/v2/authorize?client_id=" + config.Slack.ClientID + "&scope=commands,links:read,links:write&user_scope=links:read"
 	http.Redirect(w, r, url, http.StatusFound)
 }
 
