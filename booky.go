@@ -113,7 +113,6 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	case "menuSearch":
 		menuSearch(action)
 	case "lookUpDialog":
-		log.Println(action)
 		dialogSearch(action, w)
 	default:
 		log.Println(action.CallbackID)
@@ -137,7 +136,7 @@ func bookyCommand(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte(""))
-	if queryText == "?" || queryText == "help"  {
+	if queryText == "?" || queryText == "help" {
 		simpleResponse(responseURL, "If you're having trouble or just want to leave a message go to http://booky.fyi/contact or email Max@ClockworkCoding.com", true, token)
 		return
 	}
@@ -151,8 +150,6 @@ func dialogSearch(action action, w http.ResponseWriter) {
 		return
 	}
 
-	log.Println(action.Submission)
-	log.Println(action)
 	//err = json.Unmarshal(action.Submission, &submission)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
@@ -259,6 +256,7 @@ type Configuration struct {
 	RedisURL          string `json:"RedisURL"`
 	URL               string `json:"URL"`
 	BitlyKey          string `json:"BitlyKey"`
+	BookshopID        string `json:"BookshopId"`
 	RedirectURL       string `json:"RedirectURL"`
 	Patreon           string `json:"patreon"`
 	DescriptionLength int    `json:"description_length"`
@@ -323,6 +321,7 @@ func readConfig() Configuration {
 		configuration.Slack.VerificationToken = os.Getenv("SLACK_VERIFICATION_TOKEN")
 		configuration.URL = os.Getenv("URL")
 		configuration.BitlyKey = os.Getenv("BITLY_KEY")
+		configuration.BookshopID = os.Getenv("BOOKSHOP_ID")
 		configuration.RedirectURL = os.Getenv("REDIRECT_URL")
 		configuration.Keys.Key1 = os.Getenv("KEY_1")
 		configuration.Keys.Key2 = os.Getenv("KEY_2")

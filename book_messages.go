@@ -69,6 +69,11 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		patreonText = " | " + config.Patreon
 	}
 
+	bookshopLink := getBookshopLink(book.Book_isbn13[0].Text, book.Book_work[0].Book_original_title.Text)
+	if len(bookshopLink) > 0 {
+    bookshopLink = " \n<" + bookshopLink + " | Buy this book from Bookshop.org> (<http://booky.fyi/affiliate |affiate disclosure>)"
+	}
+
 	attachments := []slack.Attachment{
 		{
 			Title:      book.Book_title[0].Text,
@@ -91,7 +96,7 @@ func createBookPost(values wrongBookButtonValues, wrongBookButtons bool, showFul
 		{
 			Text:       replaceMarkup(book.Book_description.Text),
 			MarkdownIn: []string{"text", "fields"},
-			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com%s", values.UserName, patreonText),
+			Footer:     fmt.Sprintf("Posted by @%s using /booky | Data from Goodreads.com%s%s", values.UserName, patreonText, bookshopLink),
 		},
 	}
 	if wrongBookButtons {
@@ -245,7 +250,6 @@ func event(w http.ResponseWriter, r *http.Request) {
 	}
 }
 func menuSearch(action action) {
-	log.Println("Menu Search", "\n", action)
 	_, token, _, err := getSlackAuth(action.Team.ID)
 	api := slack.New(token)
 	if len(strings.Split(action.Message.Text, " ")) == 1 {
@@ -310,7 +314,6 @@ func menuSearch(action action) {
 		Title:          "Look up from post",
 		Elements:       elements,
 	}
-	log.Println("Menu Search", "\n", lookUpDialog)
 
 	err = api.PostDialog(action.TriggerID, token, lookUpDialog)
 	if err != nil {
