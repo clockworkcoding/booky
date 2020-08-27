@@ -87,7 +87,10 @@ func formatTitle(title string) (linkTitle string) {
 		} else {
 			sb.WriteRune('-')
 		}
-
 	}
-	return sb.String()
+  linkTitle = sb.String()
+  for(strings.Contains(link, "--")){
+    linkTitle = strings.Replace(linkTitle, "--", "-")
+  }
+	return
 }
