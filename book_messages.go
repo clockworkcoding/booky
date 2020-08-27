@@ -341,6 +341,7 @@ func findTitleOptions(text string, sep string) (options []slack.DialogOption) {
 
 func generateGoodreadsLinks(link eventLinkShared) {
 
+  log.Println(link.Event.Links[0].URL)
 	if !strings.Contains(link.Event.Links[0].URL, "book/show/") {
 		return
 	}
