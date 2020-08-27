@@ -12,22 +12,22 @@ import (
 const bookshopURL = "https://bookshop.org/"
 
 func getBookshopLink(isbn string, title string) (link string) {
-  if config.BookshopID == "" || (isbn== "" && title == "") {
+  if config.BookshopID == "" {
 		return
 	}
   
 
   log.Println(title)
   log.Println(isbn)
-  log.Println(bookURL)
-	// Build the request
+  
   if isbn != ""{
     link = getIsbnLink(isbn)
   }
-  if link!= "" && title != "" {
+  if link == "" && title != "" {
     link = getTitleLink(title)
   }
   
+  log.Println(link)
 	return
 }
 
@@ -59,9 +59,10 @@ func getIsbnLink(isbn string) (link string){
 func getTitleLink(title string) (link string){
   
 	titleURL := bookshopURL + "books/" + url.QueryEscape(formatTitle(title))
+  log.Println(titleURL)
 	req, err := http.NewRequest("GET", titleURL, nil)
 	if err != nil {
-		log.Println("bit.ly error: ", err)
+		log.Println("bookshop error: ", err)
 		return
 	}
 	client := &http.Client{

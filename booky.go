@@ -113,7 +113,6 @@ func buttonPressed(w http.ResponseWriter, r *http.Request) {
 	case "menuSearch":
 		menuSearch(action)
 	case "lookUpDialog":
-		log.Println(action)
 		dialogSearch(action, w)
 	default:
 		log.Println(action.CallbackID)
@@ -151,8 +150,6 @@ func dialogSearch(action action, w http.ResponseWriter) {
 		return
 	}
 
-	log.Println(action.Submission)
-	log.Println(action)
 	//err = json.Unmarshal(action.Submission, &submission)
 	if err != nil {
 		responseError(action.ResponseURL, err.Error(), token)
