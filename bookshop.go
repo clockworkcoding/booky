@@ -12,8 +12,8 @@ import (
 const bookshopURL = "https://bookshop.org/"
 
 func getBookshopLink(isbn string, titles []string) (link string) {
-	log.Println("isbn: " + isbn)
-	log.Println(titles)
+	//log.Println("isbn: " + isbn)
+	//log.Println(titles)
 
 	if config.BookshopID == "" {
 		return
@@ -25,7 +25,6 @@ func getBookshopLink(isbn string, titles []string) (link string) {
 	for _, title := range titles {
 		if link == "" && title != "" {
 			link = getTitleLink(title)
-      log.Println("Link?:" + link)
 		} 
 	}
 
@@ -50,7 +49,7 @@ func getIsbnLink(isbn string) (link string) {
 	}
 
 	if resp.StatusCode != 200 {
-		log.Println(resp.StatusCode)
+		//log.Println(resp.StatusCode)
 		return
 	}
 	link = isbnURL
@@ -78,11 +77,12 @@ func getTitleLink(title string) (link string) {
 	}
 
 	if resp.StatusCode != 302 {
-		log.Println(resp.StatusCode)
+		//log.Println(resp.StatusCode)
 		return
 	}
-  log.Println(resp.Header.Get("location"))
-	link = titleURL + "?aid=" + config.BookshopID
+  urlParts := strings.Split(resp.Header.Get("location"), "/")
+  isbn := urlParts[len(urlParts)-1]
+  link = getIsbnLink(isbn)
 	return
 }
 
