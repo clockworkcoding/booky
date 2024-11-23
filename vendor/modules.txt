@@ -1,0 +1,47 @@
+# github.com/DDRBoxman/go-amazon-product-api v0.0.0-20190129165221-1c2c2bc70f3b
+## explicit
+github.com/DDRBoxman/go-amazon-product-api
+# github.com/campoy/apiai v0.0.0-20171201233727-d933019d3696
+## explicit
+github.com/campoy/apiai
+# github.com/clockworkcoding/goodreads v0.0.0-20171209172042-dc565c48f23a
+## explicit
+github.com/clockworkcoding/goodreads
+# github.com/clockworkcoding/goverdrive v0.0.0-20170713222943-d47bbb2f0ee0
+## explicit
+github.com/clockworkcoding/goverdrive
+# github.com/clockworkcoding/slack v0.0.4
+## explicit
+github.com/clockworkcoding/slack
+# github.com/go-redis/redis v6.15.9+incompatible
+## explicit
+github.com/go-redis/redis
+github.com/go-redis/redis/internal
+github.com/go-redis/redis/internal/consistenthash
+github.com/go-redis/redis/internal/hashtag
+github.com/go-redis/redis/internal/pool
+github.com/go-redis/redis/internal/proto
+github.com/go-redis/redis/internal/util
+# github.com/google/go-cmp v0.6.0
+## explicit; go 1.13
+# github.com/lib/pq v1.10.9
+## explicit; go 1.13
+github.com/lib/pq
+github.com/lib/pq/oid
+github.com/lib/pq/scram
+# github.com/mrjones/oauth v0.0.0-20190623134757-126b35219450
+## explicit
+github.com/mrjones/oauth
+# github.com/onsi/ginkgo v1.16.5
+## explicit; go 1.16
+# github.com/onsi/gomega v1.35.1
+## explicit; go 1.22
+# github.com/stretchr/testify v1.9.0
+## explicit; go 1.17
+# golang.org/x/net v0.31.0
+## explicit; go 1.18
+golang.org/x/net/websocket
+# golang.org/x/oauth2 v0.24.0
+## explicit; go 1.18
+golang.org/x/oauth2
+golang.org/x/oauth2/internal
